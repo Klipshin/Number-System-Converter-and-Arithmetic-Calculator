@@ -5,6 +5,7 @@
 ## 1. Required Base Combinations Test Matrix
 
 ### Test Case Suite 1: Binary + Octal + Decimal
+
 - **Preset Number**: `1`
 - **Inputs**:
   1. Input 1: `101010` in Binary (Base 2)
@@ -12,21 +13,23 @@
   3. Input 3: `42` in Decimal (Base 10)
 
 #### Console Output:
+
 ```text
   ========================================================================================
-                                  CONVERSION RESULTS TABLE                                
+                                  CONVERSION RESULTS TABLE
   ========================================================================================
-  #   Original Input  Base    Binary (Base 2)     Octal (Base 8)  Decimal (10)  Hex (16)    
+   #   Original Input Base    Binary (Base 2)     Octal (Base 8)  Decimal (10)  Hex (16)
   ----------------------------------------------------------------------------------------
-  1   101010          BIN     101010              52              42            2A          
-  2   52              OCT     101010              52              42            2A          
-  3   42              DEC     101010              52              42            2A          
+   1   101010         BIN     101010              52              42            2A
+   2   52             OCT     101010              52              42            2A
+   3   42             DEC     101010              52              42            2A
   ========================================================================================
 ```
 
 ---
 
 ### Test Case Suite 2: Binary + Decimal + Hexadecimal
+
 - **Preset Number**: `2`
 - **Inputs**:
   1. Input 1: `11001100` in Binary (Base 2)
@@ -34,21 +37,23 @@
   3. Input 3: `CC` in Hexadecimal (Base 16)
 
 #### Console Output:
+
 ```text
   ========================================================================================
-                                  CONVERSION RESULTS TABLE                                
+                                  CONVERSION RESULTS TABLE
   ========================================================================================
-  #   Original Input  Base    Binary (Base 2)     Octal (Base 8)  Decimal (10)  Hex (16)    
+  #   Original Input  Base    Binary (Base 2)     Octal (Base 8)  Decimal (10)  Hex (16)
   ----------------------------------------------------------------------------------------
-  1   11001100        BIN     11001100            314             204           CC          
-  2   204             DEC     11001100            314             204           CC          
-  3   CC              HEX     11001100            314             204           CC          
+  1   11001100        BIN     11001100            314             204           CC
+  2   204             DEC     11001100            314             204           CC
+  3   CC              HEX     11001100            314             204           CC
   ========================================================================================
 ```
 
 ---
 
 ### Test Case Suite 3: Octal + Decimal + Hexadecimal
+
 - **Preset Number**: `3`
 - **Inputs**:
   1. Input 1: `755` in Octal (Base 8)
@@ -56,21 +61,23 @@
   3. Input 3: `1ED` in Hexadecimal (Base 16)
 
 #### Console Output:
+
 ```text
   ========================================================================================
-                                  CONVERSION RESULTS TABLE                                
+                                  CONVERSION RESULTS TABLE
   ========================================================================================
-  #   Original Input  Base    Binary (Base 2)     Octal (Base 8)  Decimal (10)  Hex (16)    
+  #   Original Input  Base    Binary (Base 2)     Octal (Base 8)  Decimal (10)  Hex (16)
   ----------------------------------------------------------------------------------------
-  1   755             OCT     111101101           755             493           1ED         
-  2   493             DEC     111101101           755             493           1ED         
-  3   1ED             HEX     111101101           755             493           1ED         
+  1   755             OCT     111101101           755             493           1ED
+  2   493             DEC     111101101           755             493           1ED
+  3   1ED             HEX     111101101           755             493           1ED
   ========================================================================================
 ```
 
 ---
 
 ### Test Case Suite 4: Binary + Octal + Hexadecimal
+
 - **Preset Number**: `4`
 - **Inputs**:
   1. Input 1: `11110000` in Binary (Base 2)
@@ -78,15 +85,16 @@
   3. Input 3: `F0` in Hexadecimal (Base 16)
 
 #### Console Output:
+
 ```text
   ========================================================================================
-                                  CONVERSION RESULTS TABLE                                
+                                  CONVERSION RESULTS TABLE
   ========================================================================================
-  #   Original Input  Base    Binary (Base 2)     Octal (Base 8)  Decimal (10)  Hex (16)    
+  #   Original Input  Base    Binary (Base 2)     Octal (Base 8)  Decimal (10)  Hex (16)
   ----------------------------------------------------------------------------------------
-  1   11110000        BIN     11110000            360             240           F0          
-  2   360             OCT     11110000            360             240           F0          
-  3   F0              HEX     11110000            360             240           F0          
+  1   11110000        BIN     11110000            360             240           F0
+  2   360             OCT     11110000            360             240           F0
+  3   F0              HEX     11110000            360             240           F0
   ========================================================================================
 ```
 
@@ -94,14 +102,14 @@
 
 ## 2. Interactive Input Validation & Error Handling Tests
 
-| Test ID | Input Value | Selected Base | Expected System Response | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| **VAL-01** | `102` | Binary (Base 2) | Displays `[!] ERROR: Invalid character '2' for Binary (Base 2). Please re-enter.` and prompts again. | PASSED |
-| **VAL-02** | `89` | Octal (Base 8) | Displays `[!] ERROR: Invalid character '8' for Octal (Base 8). Please re-enter.` and prompts again. | PASSED |
-| **VAL-03** | `12A` | Decimal (Base 10) | Displays `[!] ERROR: Invalid character 'A' for Decimal (Base 10). Please re-enter.` and prompts again. | PASSED |
-| **VAL-04** | `1G3` | Hexadecimal (Base 16) | Displays `[!] ERROR: Invalid character 'G' for Hexadecimal (Base 16). Please re-enter.` and prompts again. | PASSED |
-| **VAL-05** | `10.1.1` | Binary (Base 2) | Displays `[!] ERROR: Multiple radix points (.) are not allowed. Please re-enter.` | PASSED |
-| **VAL-06** | `2` | Number of Inputs ($N$) | Displays `[!] Error: Value must be between 3 and 20.` and re-prompts. | PASSED |
+| Test ID    | Input Value | Selected Base          | Expected System Response                                                                                   | Status |
+| :--------- | :---------- | :--------------------- | :--------------------------------------------------------------------------------------------------------- | :----- |
+| **VAL-01** | `102`       | Binary (Base 2)        | Displays `[!] ERROR: Invalid character '2' for Binary (Base 2). Please re-enter.` and prompts again.       | PASSED |
+| **VAL-02** | `89`        | Octal (Base 8)         | Displays `[!] ERROR: Invalid character '8' for Octal (Base 8). Please re-enter.` and prompts again.        | PASSED |
+| **VAL-03** | `12A`       | Decimal (Base 10)      | Displays `[!] ERROR: Invalid character 'A' for Decimal (Base 10). Please re-enter.` and prompts again.     | PASSED |
+| **VAL-04** | `1G3`       | Hexadecimal (Base 16)  | Displays `[!] ERROR: Invalid character 'G' for Hexadecimal (Base 16). Please re-enter.` and prompts again. | PASSED |
+| **VAL-05** | `10.1.1`    | Binary (Base 2)        | Displays `[!] ERROR: Multiple radix points (.) are not allowed. Please re-enter.`                          | PASSED |
+| **VAL-06** | `2`         | Number of Inputs ($N$) | Displays `[!] Error: Value must be between 3 and 20.` and re-prompts.                                      | PASSED |
 
 ---
 
@@ -136,6 +144,7 @@ When the user selects **Option 1** to inspect Input #1 (`101010` in Binary):
 Below are the pre-calculated test cases prepared for the Phase 2 Arithmetic Calculator:
 
 ### Expression 1: Mixed Base Addition ($N_1 + N_2 + N_3$)
+
 - **Input Expression**: $101010_2 + 52_8 + 42_{10}$
 - **Decimal Normalization**: $42_{10} + 42_{10} + 42_{10} = 126_{10}$
 - **Multi-Base Final Results**:
@@ -145,6 +154,7 @@ Below are the pre-calculated test cases prepared for the Phase 2 Arithmetic Calc
   - Hexadecimal: `7E`
 
 ### Expression 2: Mixed Base Subtraction ($N_1 - N_2 - N_3$)
+
 - **Input Expression**: $755_8 - 204_{10} - CC_{16}$
 - **Decimal Normalization**: $493_{10} - 204_{10} - 204_{10} = 85_{10}$
 - **Multi-Base Final Results**:
@@ -154,6 +164,7 @@ Below are the pre-calculated test cases prepared for the Phase 2 Arithmetic Calc
   - Hexadecimal: `55`
 
 ### Expression 3: Mixed Base Multiplication ($N_1 \times N_2 \times N_3$)
+
 - **Input Expression**: $101_2 \times 10_8 \times 4_{10}$
 - **Decimal Normalization**: $5_{10} \times 8_{10} \times 4_{10} = 160_{10}$
 - **Multi-Base Final Results**:
@@ -163,6 +174,7 @@ Below are the pre-calculated test cases prepared for the Phase 2 Arithmetic Calc
   - Hexadecimal: `A0`
 
 ### Expression 4: Mixed Base Division ($N_1 \div N_2 \div N_3$)
+
 - **Input Expression**: $F0_{16} \div 10_8 \div 2_{10}$
 - **Decimal Normalization**: $240_{10} \div 8_{10} \div 2_{10} = 15_{10}$
 - **Multi-Base Final Results**:
