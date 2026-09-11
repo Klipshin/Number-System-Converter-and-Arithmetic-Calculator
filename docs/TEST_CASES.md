@@ -139,12 +139,13 @@ When the user selects **Option 1** to inspect Input #1 (`101010` in Binary):
 
 ---
 
-## 4. Preparation for Phase 2: Arithmetic Calculator Test Suite
+## 4. Arithmetic Calculator Test Suite
 
-Below are the pre-calculated test cases prepared for the Phase 2 Arithmetic Calculator:
+Below are the pre-calculated test cases implemented in the Arithmetic Calculator presets. Together, they cover the required base combinations and all four arithmetic operations.
 
 ### Expression 1: Mixed Base Addition ($N_1 + N_2 + N_3$)
 
+- **Base Combination**: Binary + Octal + Decimal
 - **Input Expression**: $101010_2 + 52_8 + 42_{10}$
 - **Decimal Normalization**: $42_{10} + 42_{10} + 42_{10} = 126_{10}$
 - **Multi-Base Final Results**:
@@ -155,30 +156,39 @@ Below are the pre-calculated test cases prepared for the Phase 2 Arithmetic Calc
 
 ### Expression 2: Mixed Base Subtraction ($N_1 - N_2 - N_3$)
 
-- **Input Expression**: $755_8 - 204_{10} - CC_{16}$
-- **Decimal Normalization**: $493_{10} - 204_{10} - 204_{10} = 85_{10}$
+- **Base Combination**: Binary + Decimal + Hexadecimal
+- **Input Expression**: $11001100_2 - 100_{10} - 40_{16}$
+- **Decimal Normalization**: $204_{10} - 100_{10} - 64_{10} = 40_{10}$
 - **Multi-Base Final Results**:
-  - Binary: `1010101`
-  - Octal: `125`
-  - Decimal: `85`
-  - Hexadecimal: `55`
+  - Binary: `101000`
+  - Octal: `50`
+  - Decimal: `40`
+  - Hexadecimal: `28`
 
 ### Expression 3: Mixed Base Multiplication ($N_1 \times N_2 \times N_3$)
 
-- **Input Expression**: $101_2 \times 10_8 \times 4_{10}$
-- **Decimal Normalization**: $5_{10} \times 8_{10} \times 4_{10} = 160_{10}$
+- **Base Combination**: Octal + Decimal + Hexadecimal
+- **Input Expression**: $7_8 \times 5_{10} \times 3_{16}$
+- **Decimal Normalization**: $7_{10} \times 5_{10} \times 3_{10} = 105_{10}$
 - **Multi-Base Final Results**:
-  - Binary: `10100000`
-  - Octal: `240`
-  - Decimal: `160`
-  - Hexadecimal: `A0`
+  - Binary: `1101001`
+  - Octal: `151`
+  - Decimal: `105`
+  - Hexadecimal: `69`
 
 ### Expression 4: Mixed Base Division ($N_1 \div N_2 \div N_3$)
 
-- **Input Expression**: $F0_{16} \div 10_8 \div 2_{10}$
-- **Decimal Normalization**: $240_{10} \div 8_{10} \div 2_{10} = 15_{10}$
+- **Base Combination**: Binary + Octal + Hexadecimal
+- **Input Expression**: $11110000_2 \div 10_8 \div 3_{16}$
+- **Decimal Normalization**: $240_{10} \div 8_{10} \div 3_{10} = 10_{10}$
 - **Multi-Base Final Results**:
-  - Binary: `1111`
-  - Octal: `17`
-  - Decimal: `15`
-  - Hexadecimal: `F`
+  - Binary: `1010`
+  - Octal: `12`
+  - Decimal: `10`
+  - Hexadecimal: `A`
+
+### Error Case: Division by Zero
+
+- **Input Expression**: $1010_2 \div 0_{10} \div 2_8$
+- **Expected System Response**: Displays `[!] ERROR: Division by zero is not allowed.`
+- **Expected Result Fields**: `UNDEFINED` for Binary, Octal, Decimal, and Hexadecimal.

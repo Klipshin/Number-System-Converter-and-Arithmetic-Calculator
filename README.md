@@ -33,8 +33,11 @@ A clean, robust, and student-friendly console application developed in **standar
      - `Combination 3: Octal + Decimal + Hexadecimal`
      - `Combination 4: Binary + Octal + Hexadecimal`
 
-7. **Prepared for Phase 2 (Arithmetic Calculator)**:
-   - All inputs are normalized into unified high-precision decimal values, ready for the mixed-base arithmetic calculator in the next session.
+7. **Mixed-Base Arithmetic Calculator**:
+   - Supports addition, subtraction, multiplication, and division.
+   - Uses Decimal (Base 10) as the common representation before calculation.
+   - Displays the original mixed-base expression and the final result in Binary, Octal, Decimal, and Hexadecimal.
+   - Handles division by zero with a clear error message.
 
 ---
 

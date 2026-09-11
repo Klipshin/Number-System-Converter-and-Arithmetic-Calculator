@@ -13,7 +13,7 @@ The **Number System Converter and Arithmetic Calculator** is a console-based sof
 3. **Decimal (Base 10)**
 4. **Hexadecimal (Base 16)**
 
-This document details the complete system requirements, algorithms, pseudocode, and workflow flowchart for **Phase 1: Multi-Input Converter**, as well as the structural preparation for **Phase 2: Arithmetic Calculator**.
+This document details the complete system requirements, algorithms, pseudocode, and workflow flowchart for the complete **Multi-Input Converter and Arithmetic Calculator**.
 
 ---
 
@@ -49,6 +49,15 @@ This document details the complete system requirements, algorithms, pseudocode, 
    - Allows the student to select any of the entered numbers to view the positional notation expansion ($N \to 10$) and decimal to target conversions ($10 \to M$).
 7. **Preset Verification Suite**:
    - Includes 1-click built-in test suites for all combinations specified in Activity 1 (`BIN+OCT+DEC`, `BIN+DEC+HEX`, `OCT+DEC+HEX`, `BIN+OCT+HEX`).
+8. **Mixed-Base Arithmetic Calculator**:
+   - Lets the user select one operation after entering the input numbers:
+     - Addition
+     - Subtraction
+     - Multiplication
+     - Division
+   - Converts all values to Decimal (Base 10) before performing the selected operation.
+   - Displays the original mixed-base expression and the final answer in Binary, Octal, Decimal, and Hexadecimal.
+   - Prevents division by zero and displays a clear error message.
 
 ### 2.2 Non-Functional Requirements
 
@@ -161,6 +170,38 @@ Output: target_str (string)
 8. Return int_result
 ```
 
+### 3.4 Algorithm 4: Mixed-Base Arithmetic Operation
+
+```text
+Algorithm: Process_Arithmetic(numbers, operation)
+Input: numbers (list of valid InputNumber records), operation
+Output: arithmetic result in Binary, Octal, Decimal, Hexadecimal
+
+1. Build expression using each original input value and its selected base.
+2. Use each number's Decimal value as the common representation.
+3. If operation is Addition:
+     result = 0
+     For each number:
+       result = result + number.decimalValue
+4. Else if operation is Subtraction:
+     result = first number's decimalValue
+     For each remaining number:
+       result = result - number.decimalValue
+5. Else if operation is Multiplication:
+     result = 1
+     For each number:
+       result = result * number.decimalValue
+6. Else if operation is Division:
+     result = first number's decimalValue
+     For each remaining number:
+       If number.decimalValue == 0:
+         Display "Division by zero is not allowed."
+         Stop operation
+       result = result / number.decimalValue
+7. Convert final Decimal result to Binary, Octal, Decimal, and Hexadecimal.
+8. Display the operation name, original expression, common representation, and final results.
+```
+
 ---
 
 ## 4. System Flowchart
@@ -187,10 +228,17 @@ flowchart TD
     M -- Yes -- --> F
     M -- No -- --> N[Print Formatted Conversion Results Table]
 
-    N --> O{Inspect Math Steps?}
-    O -- Yes -- --> P[Print Positional Expansion Proof for Selected Number]
-    P --> O
-    O -- Return -- --> B
+    N --> O[Select Arithmetic Operation]
+    O --> P[Normalize All Inputs to Decimal]
+    P --> T{Division by Zero?}
+    T -- Yes -- --> U[Display Error Message]
+    T -- No -- --> V[Perform Selected Arithmetic Operation]
+    V --> W[Convert Final Result to Binary, Octal, Decimal, Hexadecimal]
+    U --> X{Inspect Math Steps or Return?}
+    W --> X
+    X -- Inspect -- --> Y[Print Positional Expansion Proof for Selected Number]
+    Y --> X
+    X -- Return -- --> B
 
     C -- Option 2 -- --> Q[Run Preset Test Combinations Suite]
     Q --> N
@@ -203,13 +251,13 @@ flowchart TD
 
 ---
 
-## 5. Phase 2: Arithmetic Calculator Architecture Hook
+## 5. Arithmetic Calculator Implementation
 
-All inputs in the system are stored in a unified `InputNumber` structure containing a normalized `decimalValue`. When implementing Phase 2 (next session), the arithmetic engine will perform:
+All inputs in the system are stored in a unified `InputNumber` structure containing a normalized `decimalValue`. The arithmetic engine performs:
 
 - **Addition**: $R_{10} = \sum X_k$
 - **Subtraction**: $R_{10} = X_1 - X_2 - \dots - X_n$
 - **Multiplication**: $R_{10} = \prod X_k$
 - **Division**: $R_{10} = X_1 \div X_2 \div \dots \div X_n$ (with check for division by zero).
 
-The resulting decimal value will be converted to all 4 bases using the existing `fromDecimal()` function.
+The resulting decimal value is converted to all 4 bases using the existing `fromDecimal()` function. Negative subtraction results are supported with a leading minus sign.
