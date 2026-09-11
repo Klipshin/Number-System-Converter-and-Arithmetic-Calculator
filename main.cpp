@@ -1,24 +1,3 @@
-/*
- * =====================================================================================
- * Activity No. 1: System Development Activity
- * Title: Number System Converter and Arithmetic Calculator
- * Language: C++ (Standard C++11 compatible with Dev-C++, Code::Blocks, VS, GCC)
- *
- * Specifications:
- * - Interactive scrollable menu navigation with Arrow keys (Up/Down) or W/S + ENTER.
- * - Screen clearing (cls) and vibrant console colors.
- * - ASCII Art Intro Banner on opening.
- * - Centered UI layout and table formatting with ANSI escape handling.
- * - Accepts at least 3 input numbers (user can specify count >= 3).
- * - Independent base selection per input: Binary (2), Octal (8), Decimal (10), Hexadecimal (16).
- * - Full input validation per number system.
- * - Converts each input to Binary, Octal, Decimal, and Hexadecimal.
- * - Displays centered formatted tabular output.
- * - Step-by-step mathematical expansion calculations.
- * - Mixed-base arithmetic operations: Addition, Subtraction, Multiplication, Division.
- * =====================================================================================
- */
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -53,7 +32,6 @@ int _getch()
 
 using namespace std;
 
-// --- Data Structures ---
 struct InputNumber
 {
     string originalStr;
@@ -70,7 +48,8 @@ struct ArithmeticResult
 {
     string operationName;
     string operationSymbol;
-    string expression;
+    string expression;       
+    string decimalExpr;     
     bool isValid;
     string errorMsg;
     double decimalValue;
@@ -80,11 +59,23 @@ struct ArithmeticResult
     string hexStr;
 };
 
-// --- Constant Definitions ---
+struct CustomExprResult
+{
+    bool isValid;
+    string errorMsg;
+    string originalExpr;    
+    string substitutedExpr; 
+    string decimalExpr;     
+    double decimalValue;
+    string binStr;
+    string octStr;
+    string decStr;
+    string hexStr;
+};
+
 const string DIGITS = "0123456789ABCDEF";
 const int TERMINAL_WIDTH = 92;
 
-// --- ANSI Color Codes ---
 const string CLR_RESET = "\033[0m";
 const string CLR_RED = "\033[1;31m";
 const string CLR_GREEN = "\033[1;32m";
@@ -95,25 +86,24 @@ const string CLR_CYAN = "\033[1;36m";
 const string CLR_WHITE = "\033[1;37m";
 const string CLR_GRAY = "\033[90m";
 
-// Base Color Palette
 string getBaseColor(int base)
 {
     switch (base)
     {
     case 2:
-        return CLR_CYAN; // Binary: Cyan
+        return CLR_CYAN; 
     case 8:
-        return CLR_YELLOW; // Octal: Yellow/Gold
+        return CLR_YELLOW; 
     case 10:
-        return CLR_MAGENTA; // Decimal: Purple/Magenta
+        return CLR_MAGENTA; 
     case 16:
-        return CLR_GREEN; // Hexadecimal: Green
+        return CLR_GREEN; 
     default:
         return CLR_WHITE;
     }
 }
 
-// Enable Virtual Terminal Processing for Windows Console
+
 void enableVirtualTerminal()
 {
 #ifdef _WIN32
@@ -123,14 +113,13 @@ void enableVirtualTerminal()
         DWORD dwMode = 0;
         if (GetConsoleMode(hOut, &dwMode))
         {
-            dwMode |= 0x0004; // ENABLE_VIRTUAL_TERMINAL_PROCESSING
+            dwMode |= 0x0004; 
             SetConsoleMode(hOut, dwMode);
         }
     }
 #endif
 }
 
-// Clear screen helper
 void clearScreen()
 {
 #ifdef _WIN32
@@ -140,7 +129,6 @@ void clearScreen()
 #endif
 }
 
-// Strip ANSI escape sequences to compute visible text length
 string stripAnsi(const string &str)
 {
     string result = "";
@@ -163,7 +151,6 @@ string stripAnsi(const string &str)
     return result;
 }
 
-// Centering Helpers
 string centerText(const string &text, int width = TERMINAL_WIDTH)
 {
     int visibleLen = static_cast<int>(stripAnsi(text).length());
@@ -273,6 +260,8 @@ string formatDecimalValue(double value);
 InputNumber processConversion(const string &inputStr, int base);
 ArithmeticResult processArithmetic(const vector<InputNumber> &numbers, int operationChoice);
 void printArithmeticResult(const ArithmeticResult &result);
+CustomExprResult processCustomExpression(const string &exprStr, const vector<InputNumber> &numbers);
+void printCustomExprResult(const CustomExprResult &result);
 void printResultsTable(const vector<InputNumber> &numbers);
 void printDetailedSteps(const InputNumber &num, int index);
 void runInteractiveConverter();
@@ -284,7 +273,6 @@ int getValidatedInt(const string &prompt, int minVal, int maxVal);
 // ASCII INTRO & HEADER
 // =====================================================================================
 
-// Geometrically Accurate Multi-Colored Tetris Animation
 void playTetrisAnimation(int totalFrames = 36)
 {
     const int ROWS = 7;
@@ -452,9 +440,6 @@ void displayHeader()
     cout << "\n";
 }
 
-// =====================================================================================
-// MAIN ENTRY POINT
-// =====================================================================================
 int main()
 {
     enableVirtualTerminal();
@@ -549,7 +534,6 @@ string getBaseCode(int base)
     }
 }
 
-// Validate input string according to the selected base
 bool validateInput(const string &inputStr, int base, string &errorMsg)
 {
     if (inputStr.empty())
@@ -789,14 +773,27 @@ ArithmeticResult processArithmetic(const vector<InputNumber> &numbers, int opera
         break;
     }
 
+    // --- Build original-value expression (e.g. "101010 [BIN] + 52 [OCT] + 42 [DEC]") ---
     stringstream expSS;
     for (size_t i = 0; i < numbers.size(); ++i)
     {
         if (i > 0)
             expSS << " " << result.operationSymbol << " ";
-        expSS << numbers[i].originalStr << "_" << numbers[i].base;
+        expSS << numbers[i].originalStr << " [" << getBaseCode(numbers[i].base) << "]";
     }
     result.expression = expSS.str();
+
+    // --- Build decimal-equivalent expression (e.g. "42 + 42 + 42") ---
+    stringstream decExpSS;
+    for (size_t i = 0; i < numbers.size(); ++i)
+    {
+        if (i > 0)
+            decExpSS << " " << result.operationSymbol << " ";
+        decExpSS << numbers[i].decStr;
+    }
+    if (result.isValid)
+        decExpSS << " = " << result.decStr;
+    result.decimalExpr = decExpSS.str();
 
     if (result.isValid)
     {
@@ -817,8 +814,298 @@ ArithmeticResult processArithmetic(const vector<InputNumber> &numbers, int opera
 }
 
 // =====================================================================================
-// USER INTERFACE & PRESENTATION
+// EXPRESSION EVALUATOR  (Shunting-Yard + RPN stack machine)
 // =====================================================================================
+
+enum TokenKind { TOK_VAR, TOK_OP, TOK_LPAREN, TOK_RPAREN, TOK_END, TOK_INVALID };
+
+struct Token
+{
+    TokenKind kind;   // token category
+    char      op;     // operator character (for TOK_OP, TOK_LPAREN, TOK_RPAREN)
+    int       varIdx; // 0-based index into numbers[] (for TOK_VAR)
+    string    raw;    // original text, used for error messages
+};
+
+// Factory so we don't rely on aggregate brace-init (GCC 4.9 compat)
+Token makeToken(TokenKind k, char o, int idx, const string &r)
+{
+    Token t;
+    t.kind   = k;
+    t.op     = o;
+    t.varIdx = idx;
+    t.raw    = r;
+    return t;
+}
+
+int operatorPrecedence(char op)
+{
+    if (op == '*' || op == '/') return 2;
+    if (op == '+' || op == '-') return 1;
+    return 0;
+}
+
+// Lexer: convert expression string into a list of tokens.
+// Variables a-z map to input numbers 0-25 (must be within numVars).
+vector<Token> tokenizeExpr(const string &expr, int numVars, string &errorMsg)
+{
+    vector<Token> tokens;
+    errorMsg = "";
+
+    for (size_t i = 0; i < expr.length(); ++i)
+    {
+        char c = expr[i];
+
+        // Skip whitespace
+        if (isspace(static_cast<unsigned char>(c))) continue;
+
+        if (c == '(')
+        {
+            tokens.push_back(makeToken(TOK_LPAREN, '(', -1, "("));
+        }
+        else if (c == ')')
+        {
+            tokens.push_back(makeToken(TOK_RPAREN, ')', -1, ")"));
+        }
+        else if (c == '+' || c == '-' || c == '*' || c == '/')
+        {
+            tokens.push_back(makeToken(TOK_OP, c, -1, string(1, c)));
+        }
+        else if (isalpha(static_cast<unsigned char>(c)))
+        {
+            int idx = tolower(static_cast<unsigned char>(c)) - 'a';
+            if (idx >= numVars)
+            {
+                errorMsg = string("Variable '") + c + "' is out of range. "
+                         + "Only " + to_string(numVars) + " input(s) defined "
+                         + "(a" + (numVars > 1 ? string(" to ") + char('a' + numVars - 1) : "") + ").";
+                return vector<Token>();
+            }
+            tokens.push_back(makeToken(TOK_VAR, 0, idx, string(1, c)));
+        }
+        else
+        {
+            errorMsg = string("Invalid character '") + c + "' in expression. "
+                       + "Use letters a-" + char('a' + numVars - 1) + " and operators + - * / ( ).";
+            return vector<Token>();
+        }
+    }
+
+    tokens.push_back(makeToken(TOK_END, 0, -1, ""));
+
+    vector<Token> expanded;
+    for (size_t j = 0; j < tokens.size(); ++j)
+    {
+        expanded.push_back(tokens[j]);
+        if (j + 1 < tokens.size())
+        {
+            TokenKind cur  = tokens[j].kind;
+            TokenKind next = tokens[j + 1].kind;
+            bool needMul = (cur == TOK_VAR    && next == TOK_LPAREN)
+                        || (cur == TOK_RPAREN  && next == TOK_VAR)
+                        || (cur == TOK_RPAREN  && next == TOK_LPAREN)
+                        || (cur == TOK_VAR     && next == TOK_VAR);
+            if (needMul)
+                expanded.push_back(makeToken(TOK_OP, '*', -1, "*"));
+        }
+    }
+    return expanded;
+}
+
+// Shunting-Yard: convert infix token list to postfix (RPN).
+vector<Token> infixToPostfix(const vector<Token> &tokens, string &errorMsg)
+{
+    vector<Token> output;
+    vector<Token> opStack;
+    errorMsg = "";
+
+    for (size_t i = 0; i < tokens.size(); ++i)
+    {
+        const Token &tok = tokens[i];
+        if (tok.kind == TOK_END) break;
+
+        if (tok.kind == TOK_VAR)
+        {
+            output.push_back(tok);
+        }
+        else if (tok.kind == TOK_OP)
+        {
+            // Pop operators with higher or equal precedence (left-associative)
+            while (!opStack.empty() &&
+                   opStack.back().kind == TOK_OP &&
+                   operatorPrecedence(opStack.back().op) >= operatorPrecedence(tok.op))
+            {
+                output.push_back(opStack.back());
+                opStack.pop_back();
+            }
+            opStack.push_back(tok);
+        }
+        else if (tok.kind == TOK_LPAREN)
+        {
+            opStack.push_back(tok);
+        }
+        else if (tok.kind == TOK_RPAREN)
+        {
+            bool foundLeft = false;
+            while (!opStack.empty())
+            {
+                if (opStack.back().kind == TOK_LPAREN)
+                {
+                    opStack.pop_back();
+                    foundLeft = true;
+                    break;
+                }
+                output.push_back(opStack.back());
+                opStack.pop_back();
+            }
+            if (!foundLeft)
+            {
+                errorMsg = "Mismatched parentheses: extra ')' detected.";
+                return vector<Token>();
+            }
+        }
+    }
+
+    // Drain remaining operators
+    while (!opStack.empty())
+    {
+        if (opStack.back().kind == TOK_LPAREN)
+        {
+            errorMsg = "Mismatched parentheses: unclosed '(' detected.";
+            return vector<Token>();
+        }
+        output.push_back(opStack.back());
+        opStack.pop_back();
+    }
+
+    return output;
+}
+
+// RPN evaluator: compute the result of a postfix token list.
+struct RpnResult
+{
+    bool   ok;
+    string msg;
+    double val;
+};
+
+RpnResult makeRpnResult(bool ok, const string &msg, double val)
+{
+    RpnResult r;
+    r.ok  = ok;
+    r.msg = msg;
+    r.val = val;
+    return r;
+}
+
+RpnResult evalPostfix(const vector<Token> &postfix, const vector<InputNumber> &numbers)
+{
+    vector<double> stk;
+
+    for (size_t i = 0; i < postfix.size(); ++i)
+    {
+        const Token &tok = postfix[i];
+
+        if (tok.kind == TOK_VAR)
+        {
+            stk.push_back(numbers[tok.varIdx].decimalValue);
+        }
+        else if (tok.kind == TOK_OP)
+        {
+            if (stk.size() < 2)
+                return makeRpnResult(false, string("Not enough operands for operator '") + tok.op + "'.", 0.0);
+
+            double b = stk.back(); stk.pop_back();
+            double a = stk.back(); stk.pop_back();
+
+            if (tok.op == '+')
+                stk.push_back(a + b);
+            else if (tok.op == '-')
+                stk.push_back(a - b);
+            else if (tok.op == '*')
+                stk.push_back(a * b);
+            else if (tok.op == '/')
+            {
+                if (fabs(b) < 1e-12)
+                    return makeRpnResult(false, "Division by zero: divisor evaluates to 0.", 0.0);
+                stk.push_back(a / b);
+            }
+        }
+    }
+
+    if (stk.empty())
+        return makeRpnResult(false, "Expression is empty or produced no result.", 0.0);
+    if (stk.size() > 1)
+        return makeRpnResult(false, "Malformed expression: too many values left unevaluated.", 0.0);
+
+    return makeRpnResult(true, "", stk[0]);
+}
+
+// High-level: tokenize, convert, evaluate, format results.
+CustomExprResult processCustomExpression(const string &exprStr, const vector<InputNumber> &numbers)
+{
+    CustomExprResult res;
+    res.isValid      = false;
+    res.originalExpr = exprStr;
+    res.decimalValue = 0.0;
+    res.binStr = res.octStr = res.decStr = res.hexStr = "UNDEFINED";
+
+    if (exprStr.empty())
+    {
+        res.errorMsg = "Expression cannot be empty.";
+        return res;
+    }
+
+    string errMsg;
+    vector<Token> tokens = tokenizeExpr(exprStr, static_cast<int>(numbers.size()), errMsg);
+    if (!errMsg.empty()) { res.errorMsg = errMsg; return res; }
+    if (tokens.empty() || tokens[0].kind == TOK_END)
+    { res.errorMsg = "Expression is empty after parsing."; return res; }
+
+    vector<Token> postfix = infixToPostfix(tokens, errMsg);
+    if (!errMsg.empty()) { res.errorMsg = errMsg; return res; }
+
+    RpnResult rr = evalPostfix(postfix, numbers);
+    if (!rr.ok) { res.errorMsg = rr.msg; return res; }
+
+    res.isValid      = true;
+    res.decimalValue = rr.val;
+    res.decStr       = formatDecimalValue(res.decimalValue);
+    res.binStr       = fromDecimal(res.decimalValue, 2);
+    res.octStr       = fromDecimal(res.decimalValue, 8);
+    res.hexStr       = fromDecimal(res.decimalValue, 16);
+
+    // Build substituted and decimal-equivalent expressions character-by-character
+    stringstream subSS, decSS;
+    for (size_t i = 0; i < exprStr.length(); ++i)
+    {
+        char c = exprStr[i];
+        if (isspace(static_cast<unsigned char>(c))) continue;
+
+        if (isalpha(static_cast<unsigned char>(c)))
+        {
+            int idx = tolower(static_cast<unsigned char>(c)) - 'a';
+            subSS << numbers[idx].originalStr << "[" << getBaseCode(numbers[idx].base) << "]";
+            decSS << numbers[idx].decStr;
+        }
+        else if (c == '+')
+        { subSS << " + "; decSS << " + "; }
+        else if (c == '-')
+        { subSS << " - "; decSS << " - "; }
+        else if (c == '*')
+        { subSS << " x "; decSS << " x "; }
+        else if (c == '/')
+        { subSS << " / "; decSS << " / "; }
+        else
+        { subSS << c; decSS << c; }
+    }
+    decSS << " = " << res.decStr;
+    res.substitutedExpr = subSS.str();
+    res.decimalExpr     = decSS.str();
+
+    return res;
+}
+
 
 void pauseConsole()
 {
@@ -850,7 +1137,6 @@ int getValidatedInt(const string &prompt, int minVal, int maxVal)
     }
 }
 
-// Centered formatted table of conversion results with color coding
 void printResultsTable(const vector<InputNumber> &numbers)
 {
     cout << "\n";
@@ -900,19 +1186,77 @@ void printArithmeticResult(const ArithmeticResult &result)
     printDivider('=', CLR_GREEN);
     printCentered(CLR_WHITE + "ARITHMETIC CALCULATOR RESULT" + CLR_RESET);
     printDivider('=', CLR_GREEN);
-    printCentered("Selected Operation: " + CLR_YELLOW + result.operationName + CLR_RESET);
-    printCentered("Original Expression: " + CLR_WHITE + result.expression + CLR_RESET);
+
+    // --- Operation label ---
+    printCentered("Operation : " + CLR_YELLOW + result.operationName + " (" + result.operationSymbol + ")" + CLR_RESET);
+    cout << "\n";
+
+    // --- Original expression (mixed-base) ---
+    printCentered(CLR_GRAY + "  Original (mixed bases)  : " + CLR_WHITE + result.expression + CLR_RESET);
 
     if (!result.isValid)
     {
+        cout << "\n";
         printCentered(CLR_RED + "[!] ERROR: " + result.errorMsg + CLR_RESET);
         printDivider('=', CLR_GREEN);
         cout << "\n";
         return;
     }
 
-    printCentered("Common Representation: " + CLR_MAGENTA + "Decimal (Base 10)" + CLR_RESET);
+    // --- Decimal equivalent expression ---
+    printCentered(CLR_GRAY + "  Decimal equivalent      : " + CLR_MAGENTA + result.decimalExpr + CLR_RESET);
+    printCentered(CLR_GRAY + "  (All values converted to Decimal before operation)" + CLR_RESET);
     cout << "\n";
+    printDivider('-', CLR_GRAY);
+
+    // --- Result table ---
+    stringstream headerSS;
+    headerSS << left
+             << setw(22) << "Binary (Base 2)"
+             << setw(18) << "Octal (Base 8)"
+             << setw(18) << "Decimal (10)"
+             << setw(18) << "Hexadecimal (16)";
+    printCentered(CLR_YELLOW + "RESULT IN ALL BASES:" + CLR_RESET);
+    printCentered(CLR_YELLOW + headerSS.str() + CLR_RESET);
+    printDivider('-', CLR_GRAY);
+
+    stringstream rowSS;
+    rowSS << left
+          << CLR_CYAN    << setw(22) << result.binStr
+          << CLR_YELLOW  << setw(18) << result.octStr
+          << CLR_MAGENTA << setw(18) << result.decStr
+          << CLR_GREEN   << setw(18) << result.hexStr
+          << CLR_RESET;
+    printCentered(rowSS.str());
+    printDivider('=', CLR_GREEN);
+    cout << "\n";
+}
+
+void printCustomExprResult(const CustomExprResult &result)
+{
+    cout << "\n";
+    printDivider('=', CLR_GREEN);
+    printCentered(CLR_WHITE + "CUSTOM EXPRESSION RESULT" + CLR_RESET);
+    printDivider('=', CLR_GREEN);
+
+    // Variable legend
+    printCentered(CLR_GRAY + "  Expression : " + CLR_WHITE + result.originalExpr + CLR_RESET);
+    cout << "\n";
+    printCentered(CLR_GRAY + "  Substituted: " + CLR_WHITE + result.substitutedExpr + CLR_RESET);
+
+    if (!result.isValid)
+    {
+        cout << "\n";
+        printCentered(CLR_RED + "  [!] ERROR: " + result.errorMsg + CLR_RESET);
+        printDivider('=', CLR_GREEN);
+        cout << "\n";
+        return;
+    }
+
+    printCentered(CLR_GRAY + "  Decimal eq. : " + CLR_MAGENTA + result.decimalExpr + CLR_RESET);
+    printCentered(CLR_GRAY + "  (All values converted to Decimal, then expression evaluated)" + CLR_RESET);
+    cout << "\n";
+    printDivider('-', CLR_GRAY);
 
     stringstream headerSS;
     headerSS << left
@@ -920,22 +1264,22 @@ void printArithmeticResult(const ArithmeticResult &result)
              << setw(18) << "Octal (Base 8)"
              << setw(18) << "Decimal (10)"
              << setw(18) << "Hexadecimal (16)";
+    printCentered(CLR_YELLOW + "RESULT IN ALL BASES:" + CLR_RESET);
     printCentered(CLR_YELLOW + headerSS.str() + CLR_RESET);
     printDivider('-', CLR_GRAY);
 
     stringstream rowSS;
     rowSS << left
-          << CLR_CYAN << setw(22) << result.binStr
-          << CLR_YELLOW << setw(18) << result.octStr
+          << CLR_CYAN    << setw(22) << result.binStr
+          << CLR_YELLOW  << setw(18) << result.octStr
           << CLR_MAGENTA << setw(18) << result.decStr
-          << CLR_GREEN << setw(18) << result.hexStr
+          << CLR_GREEN   << setw(18) << result.hexStr
           << CLR_RESET;
     printCentered(rowSS.str());
     printDivider('=', CLR_GREEN);
     cout << "\n";
 }
 
-// Display step-by-step mathematical expansion
 void printDetailedSteps(const InputNumber &num, int index)
 {
     clearScreen();
@@ -986,7 +1330,6 @@ void printDetailedSteps(const InputNumber &num, int index)
     cout << "\n";
 }
 
-// Interactive Converter Workflow
 void runInteractiveConverter()
 {
     clearScreen();
@@ -1027,86 +1370,182 @@ void runInteractiveConverter()
 
             // Trim whitespace
             size_t start = inputStr.find_first_not_of(" \t\r\n");
-            size_t end = inputStr.find_last_not_of(" \t\r\n");
+            size_t end   = inputStr.find_last_not_of(" \t\r\n");
             inputStr = (start == string::npos) ? "" : inputStr.substr(start, end - start + 1);
 
             if (validateInput(inputStr, base, errorMsg))
-            {
                 break;
-            }
             else
-            {
                 printCentered(CLR_RED + "[!] ERROR: " + errorMsg + " Please re-enter." + CLR_RESET);
-            }
         }
 
         InputNumber num = processConversion(inputStr, base);
         numbers.push_back(num);
     }
 
-    vector<string> operationOptions = {
-        "Addition (+)",
-        "Subtraction (-)",
-        "Multiplication (x)",
-        "Division (/)"};
-    int operationChoice = promptScrollableMenu("SELECT ARITHMETIC OPERATION", operationOptions);
-    ArithmeticResult arithmeticResult = processArithmetic(numbers, operationChoice);
-
-    clearScreen();
-    displayHeader();
-    printResultsTable(numbers);
-    printArithmeticResult(arithmeticResult);
-    pauseConsole();
-
-    // Options after conversion and arithmetic
-    int stepChoice = 0;
-    while (true)
+    // Build variable legend once: "a = Input 1 (101010 BIN)   b = Input 2 (52 OCT) ..."
+    string varLegend = "";
+    for (int i = 0; i < count; ++i)
     {
-        vector<string> stepOptions;
-        for (int i = 1; i <= count; ++i)
-        {
-            stepOptions.push_back("View Math Steps for Input #" + to_string(i) + " (" + numbers[i - 1].originalStr + ")");
-        }
-        stepOptions.push_back("View Arithmetic Result Again");
-        stepOptions.push_back("Return to Main Menu");
+        if (i > 0) varLegend += "   ";
+        varLegend += CLR_CYAN + string(1, char('a' + i)) + CLR_RESET
+                  + CLR_GRAY + " = Input " + to_string(i + 1) + " ("
+                  + CLR_WHITE + numbers[i].originalStr
+                  + CLR_GRAY  + " " + getBaseCode(numbers[i].base) + ")" + CLR_RESET;
+    }
 
+    bool keepGoing = true;
+    while (keepGoing)
+    {
         clearScreen();
         displayHeader();
         printResultsTable(numbers);
-        printArithmeticResult(arithmeticResult);
+        printDivider('-', CLR_CYAN);
+        printCentered(CLR_YELLOW + "VARIABLE MAP (for Custom Expression):" + CLR_RESET);
+        printCentered(varLegend);
+        printDivider('-', CLR_CYAN);
+        cout << "\n";
 
-        stepChoice = promptScrollableMenu("CONVERSION OPTIONS", stepOptions, stepChoice);
+        vector<string> operationOptions = {
+            "Addition (+)        -- apply to all inputs",
+            "Subtraction (-)     -- apply to all inputs",
+            "Multiplication (x)  -- apply to all inputs",
+            "Division (/)        -- apply to all inputs",
+            "Custom Expression   -- e.g. (a+b)*c-d  (supports precedence & parentheses)",
+            "Return to Main Menu"};
+        int operationChoice = promptScrollableMenu("SELECT ARITHMETIC OPERATION", operationOptions);
 
-        if (stepChoice == count)
+        if (operationChoice == 5) { keepGoing = false; break; }
+
+        // --- Branch: simple operation vs. custom expression ---
+        bool usingCustomExpr = (operationChoice == 4);
+        ArithmeticResult arithmeticResult;
+        CustomExprResult customResult;
+
+        if (!usingCustomExpr)
         {
-            clearScreen();
-            displayHeader();
-            printArithmeticResult(arithmeticResult);
-            pauseConsole();
-        }
-        else if (stepChoice == count + 1)
-        {
-            break; // Return to Main Menu
+            arithmeticResult = processArithmetic(numbers, operationChoice);
         }
         else
         {
-            printDetailedSteps(numbers[stepChoice], stepChoice + 1);
-            pauseConsole();
+            // Show legend + expression prompt
+            clearScreen();
+            displayHeader();
+            printResultsTable(numbers);
+            cout << "\n";
+            printDivider('-', CLR_CYAN);
+            printCentered(CLR_WHITE + "CUSTOM EXPRESSION INPUT" + CLR_RESET);
+            printDivider('-', CLR_CYAN);
+            printCentered(CLR_YELLOW + "Variable Map:" + CLR_RESET);
+            printCentered(varLegend);
+            cout << "\n";
+            printCentered(CLR_GRAY + "Operators : + - * /" + CLR_RESET);
+            printCentered(CLR_GRAY + "Precedence: (* /) evaluated before (+ -)" + CLR_RESET);
+            printCentered(CLR_GRAY + "Parens    : supported   Implicit * : a(b+c) = a*(b+c)" + CLR_RESET);
+            printCentered(CLR_GRAY + "Examples  : (a+b)*c-d   a*b+c/d   a(b+c)" + CLR_RESET);
+            cout << "\n";
+
+            string exprStr;
+            while (true)
+            {
+                cout << centerText("Enter expression: ", TERMINAL_WIDTH - 25);
+                getline(cin, exprStr);
+
+                // Trim
+                size_t es = exprStr.find_first_not_of(" \t\r\n");
+                size_t ee = exprStr.find_last_not_of(" \t\r\n");
+                exprStr = (es == string::npos) ? "" : exprStr.substr(es, ee - es + 1);
+
+                if (exprStr.empty())
+                { printCentered(CLR_RED + "[!] Expression cannot be empty. Try again." + CLR_RESET); continue; }
+
+                // Pre-validate
+                string testErr;
+                tokenizeExpr(exprStr, count, testErr);
+                if (!testErr.empty())
+                { printCentered(CLR_RED + "[!] " + testErr + CLR_RESET); continue; }
+                break;
+            }
+
+            customResult = processCustomExpression(exprStr, numbers);
         }
-    }
+
+        // --- Show result ---
+        clearScreen();
+        displayHeader();
+        printResultsTable(numbers);
+        if (!usingCustomExpr)
+            printArithmeticResult(arithmeticResult);
+        else
+            printCustomExprResult(customResult);
+        pauseConsole();
+
+        // --- Post-result options ---
+        int stepChoice = 0;
+        bool tryAnother = false;
+        while (!tryAnother)
+        {
+            vector<string> stepOptions;
+            for (int i = 1; i <= count; ++i)
+                stepOptions.push_back("View Math Steps for Input #" + to_string(i)
+                                      + "  [" + string(1, char('a' + i - 1)) + " = "
+                                      + numbers[i-1].originalStr + " "
+                                      + getBaseCode(numbers[i-1].base) + "]");
+            stepOptions.push_back("View Current Result Again");
+            stepOptions.push_back("Try Another Operation       (keep same numbers)");
+            stepOptions.push_back("Return to Main Menu");
+
+            clearScreen();
+            displayHeader();
+            printResultsTable(numbers);
+            if (!usingCustomExpr)
+                printArithmeticResult(arithmeticResult);
+            else
+                printCustomExprResult(customResult);
+
+            stepChoice = promptScrollableMenu("OPTIONS", stepOptions, stepChoice);
+
+            int tryAnotherIdx = count + 1;
+            int returnIdx     = count + 2;
+
+            if (stepChoice < count)                   
+            {
+                printDetailedSteps(numbers[stepChoice], stepChoice + 1);
+                pauseConsole();
+            }
+            else if (stepChoice == count)             
+            {
+                clearScreen();
+                displayHeader();
+                if (!usingCustomExpr)
+                    printArithmeticResult(arithmeticResult);
+                else
+                    printCustomExprResult(customResult);
+                pauseConsole();
+            }
+            else if (stepChoice == tryAnotherIdx)     
+            {
+                tryAnother = true;  
+            }
+            else if (stepChoice == returnIdx)         
+            {
+                keepGoing  = false;
+                tryAnother = true;
+            }
+        }
+    } // end operation loop
 
     clearScreen();
 }
 
-// Run Preset Test Combinations required by Activity No. 1
 void runPresetCombinations()
 {
     vector<string> presetOptions = {
-        "Addition: Binary + Octal + Decimal",
-        "Subtraction: Binary + Decimal + Hexadecimal",
-        "Multiplication: Octal + Decimal + Hexadecimal",
-        "Division: Binary + Octal + Hexadecimal",
-        "Run All Arithmetic Test Cases",
+        "Combination 1: Binary + Octal + Decimal",
+        "Combination 2: Binary + Decimal + Hexadecimal",
+        "Combination 3: Octal + Decimal + Hexadecimal",
+        "Combination 4: Binary + Octal + Hexadecimal",
+        "Run ALL Combinations (all 4 operations each)",
         "Return to Main Menu"};
 
     int presetChoice = promptScrollableMenu("REQUIRED TEST CASE COMBINATIONS", presetOptions);
@@ -1119,35 +1558,59 @@ void runPresetCombinations()
     clearScreen();
     displayHeader();
 
-    auto runPreset = [](const string &title, const vector<pair<string, int>> &data, int operationChoice)
+    // Runs all 4 operations (+, -, *, /) on a given set of numbers
+    auto runAllOps = [](const string &comboTitle,
+                        const vector<pair<string, int> > &data)
     {
-        printCentered(CLR_YELLOW + ">>> " + title + " <<<" + CLR_RESET);
+        // Build InputNumber list once
         vector<InputNumber> numbers;
-        for (const auto &item : data)
-        {
-            numbers.push_back(processConversion(item.first, item.second));
-        }
+        for (size_t i = 0; i < data.size(); ++i)
+            numbers.push_back(processConversion(data[i].first, data[i].second));
+
+        // Print conversion table once for this combination
+        printCentered(CLR_YELLOW + ">>> " + comboTitle + " <<<" + CLR_RESET);
         printResultsTable(numbers);
-        ArithmeticResult result = processArithmetic(numbers, operationChoice);
-        printArithmeticResult(result);
+
+        // Run all 4 operations
+        for (int op = 0; op < 4; ++op)
+        {
+            ArithmeticResult res = processArithmetic(numbers, op);
+            printArithmeticResult(res);
+        }
     };
 
+    // Number combinations as specified in the activity
+    typedef vector<pair<string, int> > Combo;
+    Combo combo1, combo2, combo3, combo4;
+
+    // BIN + OCT + DEC
+    combo1.push_back(make_pair(string("101010"),   2));
+    combo1.push_back(make_pair(string("52"),       8));
+    combo1.push_back(make_pair(string("42"),      10));
+
+    // BIN + DEC + HEX
+    combo2.push_back(make_pair(string("11001100"), 2));
+    combo2.push_back(make_pair(string("100"),     10));
+    combo2.push_back(make_pair(string("40"),      16));
+
+    // OCT + DEC + HEX
+    combo3.push_back(make_pair(string("72"),       8));
+    combo3.push_back(make_pair(string("35"),      10));
+    combo3.push_back(make_pair(string("1A"),      16));
+
+    // BIN + OCT + HEX
+    combo4.push_back(make_pair(string("11110000"), 2));
+    combo4.push_back(make_pair(string("72"),       8));
+    combo4.push_back(make_pair(string("3C"),      16));
+
     if (presetChoice == 0 || presetChoice == 4)
-    {
-        runPreset("Addition: Binary + Octal + Decimal", {{"101010", 2}, {"52", 8}, {"42", 10}}, 0);
-    }
+        runAllOps("Combination 1: Binary + Octal + Decimal", combo1);
     if (presetChoice == 1 || presetChoice == 4)
-    {
-        runPreset("Subtraction: Binary + Decimal + Hexadecimal", {{"11001100", 2}, {"100", 10}, {"40", 16}}, 1);
-    }
+        runAllOps("Combination 2: Binary + Decimal + Hexadecimal", combo2);
     if (presetChoice == 2 || presetChoice == 4)
-    {
-        runPreset("Multiplication: Octal + Decimal + Hexadecimal", {{"7", 8}, {"5", 10}, {"3", 16}}, 2);
-    }
+        runAllOps("Combination 3: Octal + Decimal + Hexadecimal", combo3);
     if (presetChoice == 3 || presetChoice == 4)
-    {
-        runPreset("Division: Binary + Octal + Hexadecimal", {{"11110000", 2}, {"10", 8}, {"3", 16}}, 3);
-    }
+        runAllOps("Combination 4: Binary + Octal + Hexadecimal", combo4);
 
     pauseConsole();
     clearScreen();
