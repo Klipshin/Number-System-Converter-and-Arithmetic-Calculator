@@ -73,6 +73,48 @@ struct CustomExprResult
     string hexStr;
 };
 
+// Stores 1's and 2's complement data for a single number
+struct ComplementResult
+{
+    bool   applicable;        // false for fractional numbers
+    string note;              // reason if not applicable
+    int    bitWidth;          // number of bits used (padded)
+    string paddedBin;         // binary padded to bitWidth
+    // 1's complement
+    string onesComp_bin;
+    string onesComp_oct;
+    string onesComp_dec;
+    string onesComp_hex;
+    // 2's complement
+    string twosComp_bin;
+    string twosComp_oct;
+    string twosComp_dec;
+    string twosComp_hex;
+};
+
+// Stores result of complement-based subtraction (A - B)
+struct CompSubResult
+{
+    bool   isValid;
+    string errorMsg;
+    bool   useTwos;           // true = 2's complement, false = 1's complement
+    int    bitWidth;
+    // step data
+    string A_bin;             // minuend padded binary
+    string B_bin;             // subtrahend padded binary
+    string comp_bin;          // complement of B
+    string sum_bin;           // raw sum before carry adjustment
+    bool   hasCarry;          // carry out of MSB
+    string adjusted_bin;      // after carry adjustment
+    bool   isNegative;
+    // final result in all bases
+    double decimalResult;
+    string binStr;
+    string octStr;
+    string decStr;
+    string hexStr;
+};
+
 const string DIGITS = "0123456789ABCDEF";
 const int TERMINAL_WIDTH = 92;
 
@@ -259,11 +301,17 @@ string fromDecimal(double decVal, int targetBase, int maxFrac = 6);
 string formatDecimalValue(double value);
 InputNumber processConversion(const string &inputStr, int base);
 ArithmeticResult processArithmetic(const vector<InputNumber> &numbers, int operationChoice);
+ComplementResult computeComplements(const InputNumber &num);
+CompSubResult complementSubtract(const InputNumber &A, const InputNumber &B, bool useTwos);
 void printArithmeticResult(const ArithmeticResult &result);
+void printComplementTable(const vector<InputNumber> &numbers);
+void printCompSubResult(const CompSubResult &result, const InputNumber &A, const InputNumber &B);
 CustomExprResult processCustomExpression(const string &exprStr, const vector<InputNumber> &numbers);
 void printCustomExprResult(const CustomExprResult &result);
 void printResultsTable(const vector<InputNumber> &numbers);
 void printDetailedSteps(const InputNumber &num, int index);
+CustomExprResult promptCustomExpression(const vector<InputNumber> &numbers, const string &varLegend, int count);
+void runComplementSubmenu(const vector<InputNumber> &numbers, int count);
 void runInteractiveConverter();
 void runPresetCombinations();
 void pauseConsole();
@@ -475,6 +523,8 @@ int main()
             printCentered("Validation: Strict Character-by-Character Radix Checking ");
             printCentered("Precision: Full Integer & Radix Fractional Support       ");
             printCentered("Arithmetic: Addition, Subtraction, Multiplication, Division");
+            printCentered("Complements: 1's & 2's Complement for all number bases   ");
+            printCentered("Comp. Sub: Subtraction via 1's and 2's Complement method ");
             printCentered("Navigation: Scrollable Menus using Arrow Keys & W/S      ");
             printCentered(CLR_YELLOW + "---------------------------------------------------------" + CLR_RESET);
             cout << "\n";
@@ -813,9 +863,207 @@ ArithmeticResult processArithmetic(const vector<InputNumber> &numbers, int opera
     return result;
 }
 
-// =====================================================================================
-// EXPRESSION EVALUATOR  (Shunting-Yard + RPN stack machine)
-// =====================================================================================
+// COMPLEMENT LOGIC
+
+// Pad binary string on the left with zeros to reach exactly `width` bits.
+string padBinary(const string &bin, int width)
+{
+    if (static_cast<int>(bin.length()) >= width)
+        return bin;
+    return string(width - static_cast<int>(bin.length()), '0') + bin;
+}
+
+// Flip all '0'/'1' bits in a binary string.
+string onesComplementBin(const string &bin)
+{
+    string result = bin;
+    for (size_t i = 0; i < result.size(); ++i)
+        result[i] = (result[i] == '0') ? '1' : '0';
+    return result;
+}
+
+// Add 1 to a binary string (arbitrary width). Returns result of same width.
+string addOneTobin(const string &bin)
+{
+    string result = bin;
+    int carry = 1;
+    for (int i = static_cast<int>(result.size()) - 1; i >= 0 && carry; --i)
+    {
+        int sum = (result[i] - '0') + carry;
+        result[i] = char('0' + (sum % 2));
+        carry = sum / 2;
+    }
+    // carry overflow is intentionally discarded (wraps within bitWidth)
+    return result;
+}
+
+// 2's complement = 1's complement + 1
+string twosComplementBin(const string &bin)
+{
+    return addOneTobin(onesComplementBin(bin));
+}
+
+// Add two binary strings of equal length. Sets carryOut to true if carry
+// propagates past the MSB.
+string addBinaryStrings(const string &a, const string &b, bool &carryOut)
+{
+    int n = static_cast<int>(a.size());
+    string result(n, '0');
+    int carry = 0;
+    for (int i = n - 1; i >= 0; --i)
+    {
+        int sum = (a[i] - '0') + (b[i] - '0') + carry;
+        result[i] = char('0' + (sum % 2));
+        carry = sum / 2;
+    }
+    carryOut = (carry == 1);
+    return result;
+}
+
+// Choose smallest standard bit width >= required bits (min 8, then multiples of 8)
+int chooseBitWidth(int requiredBits)
+{
+    int width = 8;
+    while (width < requiredBits)
+        width += 8;
+    return width;
+}
+
+// Compute 1's and 2's complements for a single InputNumber.
+ComplementResult computeComplements(const InputNumber &num)
+{
+    ComplementResult res;
+    res.applicable = false;
+
+    if (!num.isValid)
+    {
+        res.note = "Invalid input — complement not computed.";
+        return res;
+    }
+
+    // Check for fractional part
+    if (num.originalStr.find('.') != string::npos)
+    {
+        res.note = "Fractional numbers — complement not applicable.";
+        return res;
+    }
+
+    // Check for negative (shouldn't happen with current validator but be safe)
+    if (!num.binStr.empty() && num.binStr[0] == '-')
+    {
+        res.note = "Negative numbers — complement display not supported.";
+        return res;
+    }
+
+    res.applicable = true;
+
+    // Strip any fractional binary part just in case
+    string rawBin = num.binStr;
+    size_t dot = rawBin.find('.');
+    if (dot != string::npos)
+        rawBin = rawBin.substr(0, dot);
+
+    int requiredBits = static_cast<int>(rawBin.size());
+    res.bitWidth  = chooseBitWidth(requiredBits);
+    res.paddedBin = padBinary(rawBin, res.bitWidth);
+
+    // 1's complement
+    res.onesComp_bin = onesComplementBin(res.paddedBin);
+    double onesDecVal = toDecimal(res.onesComp_bin, 2);
+    res.onesComp_oct = fromDecimal(onesDecVal, 8);
+    res.onesComp_dec = formatDecimalValue(onesDecVal);
+    res.onesComp_hex = fromDecimal(onesDecVal, 16);
+
+    // 2's complement
+    res.twosComp_bin = twosComplementBin(res.paddedBin);
+    double twosDecVal = toDecimal(res.twosComp_bin, 2);
+    res.twosComp_oct = fromDecimal(twosDecVal, 8);
+    res.twosComp_dec = formatDecimalValue(twosDecVal);
+    res.twosComp_hex = fromDecimal(twosDecVal, 16);
+
+    return res;
+}
+
+// Perform subtraction A - B using either 1's or 2's complement method.
+CompSubResult complementSubtract(const InputNumber &A, const InputNumber &B, bool useTwos)
+{
+    CompSubResult res;
+    res.isValid  = false;
+    res.useTwos  = useTwos;
+    res.hasCarry = false;
+    res.isNegative = false;
+    res.decimalResult = 0.0;
+
+    if (!A.isValid || !B.isValid)
+    {
+        res.errorMsg = "One or both inputs are invalid.";
+        return res;
+    }
+    if (A.originalStr.find('.') != string::npos ||
+        B.originalStr.find('.') != string::npos)
+    {
+        res.errorMsg = "Complement subtraction requires integer inputs (no radix fractions).";
+        return res;
+    }
+
+    // Determine bit width to fit both operands
+    string rawA = A.binStr;
+    string rawB = B.binStr;
+    // strip leading '-' just in case (unsigned context)
+    if (!rawA.empty() && rawA[0] == '-') rawA = rawA.substr(1);
+    if (!rawB.empty() && rawB[0] == '-') rawB = rawB.substr(1);
+
+    int reqBits = static_cast<int>(max(rawA.size(), rawB.size()));
+    res.bitWidth = chooseBitWidth(reqBits);
+
+    res.A_bin = padBinary(rawA, res.bitWidth);
+    res.B_bin = padBinary(rawB, res.bitWidth);
+
+    // Compute complement of B
+    if (useTwos)
+        res.comp_bin = twosComplementBin(res.B_bin);
+    else
+        res.comp_bin = onesComplementBin(res.B_bin);
+
+    // Add A + complement(B)
+    bool carry = false;
+    res.sum_bin  = addBinaryStrings(res.A_bin, res.comp_bin, carry);
+    res.hasCarry = carry;
+
+    if (useTwos)
+    {
+        // Discard carry-out
+        res.adjusted_bin = res.sum_bin;
+        res.isNegative   = !carry; // no carry => result is negative
+    }
+    else
+    {
+        // End-around carry: add the carry back
+        if (carry)
+        {
+            bool dummyCarry = false;
+            string carryStr = padBinary("1", res.bitWidth);
+            res.adjusted_bin = addBinaryStrings(res.sum_bin, carryStr, dummyCarry);
+            res.isNegative   = false;
+        }
+        else
+        {
+            // No carry => result is negative; take 1's complement to get magnitude
+            res.adjusted_bin = onesComplementBin(res.sum_bin);
+            res.isNegative   = true;
+        }
+    }
+
+    // Convert final binary result to decimal for display
+    double mag = toDecimal(res.adjusted_bin, 2);
+    res.decimalResult = res.isNegative ? -mag : mag;
+    res.binStr = (res.isNegative ? "-" : "") + res.adjusted_bin;
+    res.octStr = fromDecimal(res.decimalResult, 8);
+    res.decStr = formatDecimalValue(res.decimalResult);
+    res.hexStr = fromDecimal(res.decimalResult, 16);
+    res.isValid = true;
+    return res;
+}
 
 enum TokenKind { TOK_VAR, TOK_OP, TOK_LPAREN, TOK_RPAREN, TOK_END, TOK_INVALID };
 
@@ -912,7 +1160,6 @@ vector<Token> tokenizeExpr(const string &expr, int numVars, string &errorMsg)
     return expanded;
 }
 
-// Shunting-Yard: convert infix token list to postfix (RPN).
 vector<Token> infixToPostfix(const vector<Token> &tokens, string &errorMsg)
 {
     vector<Token> output;
@@ -981,7 +1228,6 @@ vector<Token> infixToPostfix(const vector<Token> &tokens, string &errorMsg)
     return output;
 }
 
-// RPN evaluator: compute the result of a postfix token list.
 struct RpnResult
 {
     bool   ok;
@@ -1180,6 +1426,189 @@ void printResultsTable(const vector<InputNumber> &numbers)
     cout << "\n";
 }
 
+void printComplementTable(const vector<InputNumber> &numbers)
+{
+    cout << "\n";
+    printDivider('=', CLR_MAGENTA);
+    printCentered(CLR_WHITE + "1'S COMPLEMENT  &  2'S COMPLEMENT TABLE" + CLR_RESET);
+    printDivider('=', CLR_MAGENTA);
+    cout << "\n";
+
+    for (size_t i = 0; i < numbers.size(); ++i)
+    {
+        const InputNumber &num = numbers[i];
+        ComplementResult comp  = computeComplements(num);
+
+        string varLabel = string(1, char('a' + i));
+        printCentered(CLR_YELLOW + "--- Input #" + to_string(i + 1)
+                      + "  [" + varLabel + " = "
+                      + num.originalStr + " " + getBaseCode(num.base) + "] ---" + CLR_RESET);
+        cout << "\n";
+
+        if (!comp.applicable)
+        {
+            printCentered(CLR_RED + "  Note: " + comp.note + CLR_RESET);
+            cout << "\n";
+            continue;
+        }
+
+        // Original + padded binary
+        printCentered(CLR_GRAY + "  Bit Width  : " + CLR_WHITE + to_string(comp.bitWidth) + " bits" + CLR_RESET);
+        printCentered(CLR_GRAY + "  Binary     : " + CLR_CYAN  + comp.paddedBin + CLR_RESET);
+        cout << "\n";
+
+        // 1's complement row
+        printCentered(CLR_GREEN + "  [ 1's Complement ]" + CLR_RESET);
+        {
+            stringstream ss;
+            ss << left
+               << CLR_CYAN    << setw(26) << ("  BIN: " + comp.onesComp_bin)
+               << CLR_YELLOW  << setw(18) << ("OCT: "  + comp.onesComp_oct)
+               << CLR_MAGENTA << setw(16) << ("DEC: "  + comp.onesComp_dec)
+               << CLR_GREEN   << setw(14) << ("HEX: "  + comp.onesComp_hex)
+               << CLR_RESET;
+            printCentered(ss.str());
+        }
+        cout << "\n";
+
+        // 2's complement row
+        printCentered(CLR_CYAN + "  [ 2's Complement ]" + CLR_RESET);
+        {
+            stringstream ss;
+            ss << left
+               << CLR_CYAN    << setw(26) << ("  BIN: " + comp.twosComp_bin)
+               << CLR_YELLOW  << setw(18) << ("OCT: "  + comp.twosComp_oct)
+               << CLR_MAGENTA << setw(16) << ("DEC: "  + comp.twosComp_dec)
+               << CLR_GREEN   << setw(14) << ("HEX: "  + comp.twosComp_hex)
+               << CLR_RESET;
+            printCentered(ss.str());
+        }
+        cout << "\n";
+        printDivider('-', CLR_GRAY);
+        cout << "\n";
+    }
+    printDivider('=', CLR_MAGENTA);
+    cout << "\n";
+}
+
+void printCompSubResult(const CompSubResult &result,
+                        const InputNumber   &A,
+                        const InputNumber   &B)
+{
+    string methodName = result.useTwos ? "2's Complement" : "1's Complement";
+    string compLabel  = result.useTwos ? "2's comp(B)" : "1's comp(B)";
+
+    cout << "\n";
+    printDivider('=', CLR_MAGENTA);
+    printCentered(CLR_WHITE + "SUBTRACTION USING " + methodName + CLR_RESET);
+    printCentered(CLR_GRAY + "  A = " + CLR_WHITE + A.originalStr + " [" + getBaseCode(A.base) + "]" +
+                  CLR_GRAY + "   B = " + CLR_WHITE + B.originalStr + " [" + getBaseCode(B.base) + "]" + CLR_RESET);
+    printDivider('=', CLR_MAGENTA);
+
+    if (!result.isValid)
+    {
+        cout << "\n";
+        printCentered(CLR_RED + "[!] ERROR: " + result.errorMsg + CLR_RESET);
+        printDivider('=', CLR_MAGENTA);
+        cout << "\n";
+        return;
+    }
+
+    cout << "\n";
+    printCentered(CLR_YELLOW + "Step-by-Step Complement Subtraction ( A - B )" + CLR_RESET);
+    cout << "\n";
+
+    // Step 1: Show both operands in binary
+    printCentered(CLR_CYAN + "Step 1: Binary representations (" + to_string(result.bitWidth) + "-bit padded)" + CLR_RESET);
+    printCentered(CLR_GRAY + "  A = " + CLR_WHITE + A.decStr + CLR_GRAY + " -> BIN: " + CLR_CYAN + result.A_bin + CLR_RESET);
+    printCentered(CLR_GRAY + "  B = " + CLR_WHITE + B.decStr + CLR_GRAY + " -> BIN: " + CLR_CYAN + result.B_bin + CLR_RESET);
+    cout << "\n";
+
+    // Step 2: Complement of B
+    printCentered(CLR_CYAN + "Step 2: Compute " + compLabel + CLR_RESET);
+    if (result.useTwos)
+    {
+        string onesOfB = onesComplementBin(result.B_bin);
+        printCentered(CLR_GRAY + "  1's comp(B) = " + CLR_YELLOW + onesOfB + CLR_RESET);
+        printCentered(CLR_GRAY + "  Add 1       = " + CLR_GREEN  + result.comp_bin
+                      + CLR_GRAY + "  <-- 2's complement of B" + CLR_RESET);
+    }
+    else
+    {
+        printCentered(CLR_GRAY + "  Flip all bits of B: " + CLR_GREEN + result.comp_bin
+                      + CLR_GRAY + "  <-- 1's complement of B" + CLR_RESET);
+    }
+    cout << "\n";
+
+    // Step 3: Add A + comp(B)
+    printCentered(CLR_CYAN + "Step 3: Add  A + " + compLabel + CLR_RESET);
+    cout << "\n";
+    // visual alignment
+    int pad = (TERMINAL_WIDTH - static_cast<int>(result.bitWidth) - 8) / 2;
+    string indent(max(0, pad), ' ');
+    cout << indent << "    " << CLR_CYAN << result.A_bin << CLR_RESET << "\n";
+    cout << indent << "  + " << CLR_GREEN << result.comp_bin << CLR_RESET << "\n";
+    cout << indent << "    " << string(result.bitWidth, '-') << "\n";
+    cout << indent << "    " << CLR_WHITE << result.sum_bin << CLR_RESET;
+    if (result.hasCarry)
+        cout << CLR_YELLOW << "  <-- carry-out" << CLR_RESET;
+    cout << "\n\n";
+
+    // Step 4: Carry adjustment
+    printCentered(CLR_CYAN + "Step 4: Carry Adjustment" + CLR_RESET);
+    if (result.useTwos)
+    {
+        if (result.hasCarry)
+            printCentered(CLR_GRAY + "  Carry-out detected -> Discard carry. Result is POSITIVE." + CLR_RESET);
+        else
+            printCentered(CLR_GRAY + "  No carry-out -> Result is NEGATIVE." + CLR_RESET);
+    }
+    else
+    {
+        if (result.hasCarry)
+        {
+            printCentered(CLR_GRAY + "  Carry-out detected -> End-Around Carry: add carry back to sum." + CLR_RESET);
+            printCentered(CLR_GRAY + "  " + result.sum_bin + " + 1 = " + CLR_GREEN + result.adjusted_bin + CLR_RESET + "  (positive)" );
+        }
+        else
+        {
+            printCentered(CLR_GRAY + "  No carry-out -> Result is NEGATIVE." + CLR_RESET);
+            printCentered(CLR_GRAY + "  Take 1's complement of sum to get magnitude: "
+                          + CLR_GREEN + result.adjusted_bin + CLR_RESET);
+        }
+    }
+    cout << "\n";
+
+    // Final result
+    printDivider('-', CLR_GRAY);
+    printCentered(CLR_YELLOW + "RESULT: A - B = " + result.decStr + CLR_RESET);
+    if (result.isNegative)
+        printCentered(CLR_RED + "  (Negative result)" + CLR_RESET);
+    cout << "\n";
+
+    // All-bases result table
+    stringstream headerSS;
+    headerSS << left
+             << setw(26) << "Binary (Base 2)"
+             << setw(18) << "Octal (Base 8)"
+             << setw(18) << "Decimal (10)"
+             << setw(18) << "Hexadecimal (16)";
+    printCentered(CLR_YELLOW + "RESULT IN ALL BASES:" + CLR_RESET);
+    printCentered(CLR_YELLOW + headerSS.str() + CLR_RESET);
+    printDivider('-', CLR_GRAY);
+
+    stringstream rowSS;
+    rowSS << left
+          << CLR_CYAN    << setw(26) << result.binStr
+          << CLR_YELLOW  << setw(18) << result.octStr
+          << CLR_MAGENTA << setw(18) << result.decStr
+          << CLR_GREEN   << setw(18) << result.hexStr
+          << CLR_RESET;
+    printCentered(rowSS.str());
+    printDivider('=', CLR_MAGENTA);
+    cout << "\n";
+}
+
 void printArithmeticResult(const ArithmeticResult &result)
 {
     cout << "\n";
@@ -1330,6 +1759,177 @@ void printDetailedSteps(const InputNumber &num, int index)
     cout << "\n";
 }
 
+void runComplementSubmenu(const vector<InputNumber> &numbers, int count)
+{
+    bool compKeep = true;
+    while (compKeep)
+    {
+        clearScreen();
+        displayHeader();
+        printResultsTable(numbers);
+        printDivider('-', CLR_MAGENTA);
+        printCentered(CLR_WHITE + "COMPLEMENT OPERATIONS" + CLR_RESET);
+        printCentered(CLR_GRAY  + "1's complement: flip all bits   |   2's complement: flip + add 1" + CLR_RESET);
+        printDivider('-', CLR_MAGENTA);
+        cout << "\n";
+
+        vector<string> compOptions = {
+            "View 1's & 2's Complement Table  -- for all inputs",
+            "Subtract using 1's Complement    -- pick A and B  (shows step-by-step)",
+            "Subtract using 2's Complement    -- pick A and B  (shows step-by-step)",
+            "Back to Operation Menu"};
+        int compChoice = promptScrollableMenu("SELECT COMPLEMENT OPERATION", compOptions);
+
+        if (compChoice == 3) { break; }
+
+        bool usingCompTable   = (compChoice == 0);
+        bool usingOnesCompSub = (compChoice == 1);
+        bool usingTwosCompSub = (compChoice == 2);
+        bool usingCompSub     = usingOnesCompSub || usingTwosCompSub;
+
+        CompSubResult compSubResult;
+        int compSubA = 0, compSubB = (count > 1) ? 1 : 0;
+
+        if (usingCompSub)
+        {
+            clearScreen();
+            displayHeader();
+            printResultsTable(numbers);
+            cout << "\n";
+            printDivider('-', CLR_CYAN);
+            string methodLabel = usingTwosCompSub ? "2's" : "1's";
+            printCentered(CLR_WHITE + "COMPLEMENT SUBTRACTION  ( " + methodLabel + " Complement )" + CLR_RESET);
+            printCentered(CLR_GRAY  + "Select the MINUEND (A) and SUBTRAHEND (B) to compute  A - B" + CLR_RESET);
+            printCentered(CLR_GRAY  + "Note: complement subtraction is a strict two-operand method." + CLR_RESET);
+            printDivider('-', CLR_CYAN);
+            cout << "\n";
+
+            vector<string> pickerOpts;
+            for (int i = 0; i < count; ++i)
+            {
+                string label = "Input #" + to_string(i + 1)
+                             + "  [" + string(1, char('a' + i)) + " = "
+                             + numbers[i].originalStr + " "
+                             + getBaseCode(numbers[i].base) + "]";
+                pickerOpts.push_back(label);
+            }
+
+            compSubA = promptScrollableMenu("SELECT  A  (Minuend)", pickerOpts, 0);
+            int defaultB = (compSubA == 0) ? 1 : 0;
+            compSubB = promptScrollableMenu("SELECT  B  (Subtrahend)", pickerOpts, defaultB);
+            compSubResult = complementSubtract(numbers[compSubA], numbers[compSubB], usingTwosCompSub);
+        }
+
+        // Show result
+        clearScreen();
+        displayHeader();
+        printResultsTable(numbers);
+        if (usingCompTable)
+            printComplementTable(numbers);
+        else if (usingCompSub)
+            printCompSubResult(compSubResult, numbers[compSubA], numbers[compSubB]);
+        pauseConsole();
+
+        // Post-complement options
+        int cStepChoice = 0;
+        bool cTryAnother = false;
+        while (!cTryAnother)
+        {
+            vector<string> cStepOptions;
+            for (int i = 1; i <= count; ++i)
+                cStepOptions.push_back("View Math Steps for Input #" + to_string(i)
+                                      + "  [" + string(1, char('a' + i - 1)) + " = "
+                                      + numbers[i-1].originalStr + " "
+                                      + getBaseCode(numbers[i-1].base) + "]");
+            cStepOptions.push_back("View Current Result Again");
+            cStepOptions.push_back("Try Another Complement Operation");
+            cStepOptions.push_back("Back to Operation Menu");
+
+            clearScreen();
+            displayHeader();
+            printResultsTable(numbers);
+            if (usingCompTable)
+                printComplementTable(numbers);
+            else if (usingCompSub)
+                printCompSubResult(compSubResult, numbers[compSubA], numbers[compSubB]);
+
+            cStepChoice = promptScrollableMenu("OPTIONS", cStepOptions, cStepChoice);
+
+            int cViewIdx  = count;
+            int cAgainIdx = count + 1;
+            int cBackIdx  = count + 2;
+
+            if (cStepChoice < count)
+            {
+                printDetailedSteps(numbers[cStepChoice], cStepChoice + 1);
+                pauseConsole();
+            }
+            else if (cStepChoice == cViewIdx)
+            {
+                clearScreen();
+                displayHeader();
+                if (usingCompTable)
+                    printComplementTable(numbers);
+                else if (usingCompSub)
+                    printCompSubResult(compSubResult, numbers[compSubA], numbers[compSubB]);
+                pauseConsole();
+            }
+            else if (cStepChoice == cAgainIdx)
+            {
+                cTryAnother = true; // back to complement submenu
+            }
+            else if (cStepChoice == cBackIdx)
+            {
+                cTryAnother = true;
+                compKeep    = false; // exit submenu
+            }
+        }
+    } // end complement submenu loop
+}
+
+// Prompts the user to type a custom infix expression, validates it, evaluates,
+// and returns the CustomExprResult. Displays the full input UI before prompting.
+CustomExprResult promptCustomExpression(const vector<InputNumber> &numbers,
+                                        const string &varLegend, int count)
+{
+    clearScreen();
+    displayHeader();
+    printResultsTable(numbers);
+    cout << "\n";
+    printDivider('-', CLR_CYAN);
+    printCentered(CLR_WHITE + "CUSTOM EXPRESSION INPUT" + CLR_RESET);
+    printDivider('-', CLR_CYAN);
+    printCentered(CLR_YELLOW + "Variable Map:" + CLR_RESET);
+    printCentered(varLegend);
+    cout << "\n";
+    printCentered(CLR_GRAY + "Operators : + - * /" + CLR_RESET);
+    printCentered(CLR_GRAY + "Precedence: (* /) evaluated before (+ -)" + CLR_RESET);
+    printCentered(CLR_GRAY + "Parens    : supported   Implicit * : a(b+c) = a*(b+c)" + CLR_RESET);
+    printCentered(CLR_GRAY + "Examples  : (a+b)*c-d   a*b+c/d   a(b+c)" + CLR_RESET);
+    cout << "\n";
+
+    string exprStr;
+    while (true)
+    {
+        cout << centerText("Enter expression: ", TERMINAL_WIDTH - 25);
+        getline(cin, exprStr);
+
+        size_t es = exprStr.find_first_not_of(" \t\r\n");
+        size_t ee = exprStr.find_last_not_of(" \t\r\n");
+        exprStr = (es == string::npos) ? "" : exprStr.substr(es, ee - es + 1);
+
+        if (exprStr.empty())
+        { printCentered(CLR_RED + "[!] Expression cannot be empty. Try again." + CLR_RESET); continue; }
+
+        string testErr;
+        tokenizeExpr(exprStr, count, testErr);
+        if (!testErr.empty())
+        { printCentered(CLR_RED + "[!] " + testErr + CLR_RESET); continue; }
+        break;
+    }
+    return processCustomExpression(exprStr, numbers);
+}
+
 void runInteractiveConverter()
 {
     clearScreen();
@@ -1406,19 +2006,29 @@ void runInteractiveConverter()
         printDivider('-', CLR_CYAN);
         cout << "\n";
 
+        // ── MAIN OPERATION MENU ──────────────────────────────────────────────
         vector<string> operationOptions = {
-            "Addition (+)        -- apply to all inputs",
-            "Subtraction (-)     -- apply to all inputs",
-            "Multiplication (x)  -- apply to all inputs",
-            "Division (/)        -- apply to all inputs",
-            "Custom Expression   -- e.g. (a+b)*c-d  (supports precedence & parentheses)",
+            "Addition (+)         -- apply to all inputs",
+            "Subtraction (-)      -- apply to all inputs",
+            "Multiplication (x)   -- apply to all inputs",
+            "Division (/)         -- apply to all inputs",
+            "Custom Expression    -- e.g. (a+b)*c-d  (supports precedence & parentheses)",
+            "Complement Operations  -->  1's & 2's complement submenu",
             "Return to Main Menu"};
         int operationChoice = promptScrollableMenu("SELECT ARITHMETIC OPERATION", operationOptions);
 
-        if (operationChoice == 5) { keepGoing = false; break; }
+        if (operationChoice == 6) { keepGoing = false; break; }
 
-        // --- Branch: simple operation vs. custom expression ---
+        // ── COMPLEMENT SUBMENU ───────────────────────────────────────────────
+        if (operationChoice == 5)
+        {
+            runComplementSubmenu(numbers, count);
+            continue;
+        }
+
+        // ── STANDARD / CUSTOM OPERATIONS ─────────────────────────────────────
         bool usingCustomExpr = (operationChoice == 4);
+
         ArithmeticResult arithmeticResult;
         CustomExprResult customResult;
 
@@ -1428,46 +2038,7 @@ void runInteractiveConverter()
         }
         else
         {
-            // Show legend + expression prompt
-            clearScreen();
-            displayHeader();
-            printResultsTable(numbers);
-            cout << "\n";
-            printDivider('-', CLR_CYAN);
-            printCentered(CLR_WHITE + "CUSTOM EXPRESSION INPUT" + CLR_RESET);
-            printDivider('-', CLR_CYAN);
-            printCentered(CLR_YELLOW + "Variable Map:" + CLR_RESET);
-            printCentered(varLegend);
-            cout << "\n";
-            printCentered(CLR_GRAY + "Operators : + - * /" + CLR_RESET);
-            printCentered(CLR_GRAY + "Precedence: (* /) evaluated before (+ -)" + CLR_RESET);
-            printCentered(CLR_GRAY + "Parens    : supported   Implicit * : a(b+c) = a*(b+c)" + CLR_RESET);
-            printCentered(CLR_GRAY + "Examples  : (a+b)*c-d   a*b+c/d   a(b+c)" + CLR_RESET);
-            cout << "\n";
-
-            string exprStr;
-            while (true)
-            {
-                cout << centerText("Enter expression: ", TERMINAL_WIDTH - 25);
-                getline(cin, exprStr);
-
-                // Trim
-                size_t es = exprStr.find_first_not_of(" \t\r\n");
-                size_t ee = exprStr.find_last_not_of(" \t\r\n");
-                exprStr = (es == string::npos) ? "" : exprStr.substr(es, ee - es + 1);
-
-                if (exprStr.empty())
-                { printCentered(CLR_RED + "[!] Expression cannot be empty. Try again." + CLR_RESET); continue; }
-
-                // Pre-validate
-                string testErr;
-                tokenizeExpr(exprStr, count, testErr);
-                if (!testErr.empty())
-                { printCentered(CLR_RED + "[!] " + testErr + CLR_RESET); continue; }
-                break;
-            }
-
-            customResult = processCustomExpression(exprStr, numbers);
+            customResult = promptCustomExpression(numbers, varLegend, count);
         }
 
         // --- Show result ---
@@ -1558,7 +2129,7 @@ void runPresetCombinations()
     clearScreen();
     displayHeader();
 
-    // Runs all 4 operations (+, -, *, /) on a given set of numbers
+    // Runs all 4 standard ops + complement table + complement subtractions
     auto runAllOps = [](const string &comboTitle,
                         const vector<pair<string, int> > &data)
     {
@@ -1571,12 +2142,22 @@ void runPresetCombinations()
         printCentered(CLR_YELLOW + ">>> " + comboTitle + " <<<" + CLR_RESET);
         printResultsTable(numbers);
 
-        // Run all 4 operations
+        // Run all 4 arithmetic operations
         for (int op = 0; op < 4; ++op)
         {
             ArithmeticResult res = processArithmetic(numbers, op);
             printArithmeticResult(res);
         }
+
+        // Complement table
+        printComplementTable(numbers);
+
+        // Complement-based subtraction (A - B = Input 1 - Input 2)
+        CompSubResult ones = complementSubtract(numbers[0], numbers[1], false);
+        printCompSubResult(ones, numbers[0], numbers[1]);
+
+        CompSubResult twos = complementSubtract(numbers[0], numbers[1], true);
+        printCompSubResult(twos, numbers[0], numbers[1]);
     };
 
     // Number combinations as specified in the activity
