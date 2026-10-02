@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="420" viewBox="0 0 920 420" role="img" aria-labelledby="title desc">
+  <title id="title">Tetris-style intro preview for Number System Converter</title>
+  <desc id="desc">Authentic animated Tetris pieces landing and clearing the bottom row cleanly.</desc>
+  <style>
+    :root {
+      --bg: #09111f;
+      --panel: #101a2e;
+      --grid-border: #1f2f49;
+      --cyan: #39d5ff;
+      --yellow: #ffd84d;
+      --blue: #5a8dff;
+      --red: #ff5c6c;
+      --magenta: #d86bff;
+      --green: #64e39a;
+      --white: #ffffff;
+    }
+
+    svg {
+      background: var(--bg);
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    .shell { fill: var(--panel); stroke: #2d4263; stroke-width: 2; }
+    .bar { fill: #17243a; }
+    .dot-red { fill: #ff5f57; }
+    .dot-yellow { fill: #ffbd2e; }
+    .dot-green { fill: #28c840; }
+
+    .title { fill: var(--cyan); font-size: 32px; font-weight: 800; letter-spacing: 1px; }
+    .subtitle { fill: var(--yellow); font-size: 16px; font-weight: 700; }
+    .bases { fill: #98a8c2; font-size: 14px; }
+
+    .cell {
+      rx: 3;
+      stroke: rgba(255, 255, 255, 0.35);
+      stroke-width: 1.5;
+    }
+
+    /* Pieces with legitimate standard Tetris colors & 4-block geometry */
+    .p-o { fill: var(--yellow); animation: fall-o 4.8s infinite steps(6); }
+    .p-j { fill: var(--blue);   animation: fall-j 4.8s infinite steps(6); }
+    .p-l { fill: var(--red);    animation: fall-l 4.8s infinite steps(6); }
+    .p-i { fill: var(--cyan);   animation: fall-i 4.8s infinite steps(6); }
+
+    /* Clean line clear trigger */
+    .row-clear { animation: fade-row 4.8s infinite; }
+    .clear-flash {
+      fill: var(--white);
+      opacity: 0;
+      animation: flash 4.8s infinite;
+    }
+
+    /* Realistic stepwise drops to their respective final heights */
+    @keyframes fall-o {
+      0%, 10%  { transform: translateY(-72px); opacity: 0; }
+      12%      { transform: translateY(-72px); opacity: 1; }
+      24%, 90% { transform: translateY(72px);  opacity: 1; }
+      91%, 100%{ opacity: 0; }
+    }
+
+    @keyframes fall-j {
+      0%, 25%  { transform: translateY(-72px); opacity: 0; }
+      27%      { transform: translateY(-72px); opacity: 1; }
+      40%, 90% { transform: translateY(72px);  opacity: 1; }
+      91%, 100%{ opacity: 0; }
+    }
+
+    @keyframes fall-l {
+      0%, 42%  { transform: translateY(-72px); opacity: 0; }
+      44%      { transform: translateY(-72px); opacity: 1; }
+      58%, 90% { transform: translateY(72px);  opacity: 1; }
+      91%, 100%{ opacity: 0; }
+    }
+
+    /* Vertical I-piece drops into the 1-block wide open slot (col 9) to complete the 10-block row */
+    @keyframes fall-i {
+      0%, 60%  { transform: translateY(-72px); opacity: 0; }
+      62%      { transform: translateY(-72px); opacity: 1; }
+      75%, 90% { transform: translateY(72px);  opacity: 1; }
+      91%, 100%{ opacity: 0; }
+    }
+
+    @keyframes flash {
+      0%, 77%  { opacity: 0; }
+      78%, 86% { opacity: 0.95; }
+      87%, 100%{ opacity: 0; }
+    }
+
+    @keyframes fade-row {
+      0%, 86%  { opacity: 1; }
+      87%, 100%{ opacity: 0; }
+    }
+  </style>
+
+  <!-- Shell Frame -->
+  <rect x="36" y="24" width="848" height="372" rx="14" class="shell"/>
+  <rect x="36" y="24" width="848" height="38" rx="14" class="bar"/>
+  <circle cx="58" cy="43" r="6" class="dot-red"/>
+  <circle cx="76" cy="43" r="6" class="dot-yellow"/>
+  <circle cx="94" cy="43" r="6" class="dot-green"/>
+
+  <!-- Header -->
+  <text x="460" y="102" text-anchor="middle" class="title">NUMBER SYSTEM CONVERTER</text>
+  <text x="460" y="130" text-anchor="middle" class="subtitle">Activity No. 1</text>
+  <text x="460" y="154" text-anchor="middle" class="bases">Binary (2) | Octal (8) | Decimal (10) | Hexadecimal (16)</text>
+
+  <!-- Tetris Well: 10 columns (240px wide), 6 rows (144px high) -->
+  <g transform="translate(340, 195)">
+    <!-- Board Matrix Frame -->
+    <rect x="-6" y="-6" width="252" height="156" rx="6" fill="#0b1322" stroke="var(--grid-border)" stroke-width="1.5"/>
+
+    <!-- Grid lines -->
+    <g stroke="rgba(255, 255, 255, 0.04)" stroke-width="1">
+      <line x1="24" y1="0" x2="24" y2="144"/><line x1="48" y1="0" x2="48" y2="144"/>
+      <line x1="72" y1="0" x2="72" y2="144"/><line x1="96" y1="0" x2="96" y2="144"/>
+      <line x1="120" y1="0" x2="120" y2="144"/><line x1="144" y1="0" x2="144" y2="144"/>
+      <line x1="168" y1="0" x2="168" y2="144"/><line x1="192" y1="0" x2="192" y2="144"/>
+      <line x1="216" y1="0" x2="216" y2="144"/>
+      <line x1="0" y1="24" x2="240" y2="24"/><line x1="0" y1="48" x2="240" y2="48"/>
+      <line x1="0" y1="72" x2="240" y2="72"/><line x1="0" y1="96" x2="240" y2="96"/>
+      <line x1="0" y1="120" x2="240" y2="120"/>
+    </g>
+
+    <!-- 1. O-Piece (2x2, 4 blocks) at Cols 0-1 -->
+    <g class="p-o">
+      <rect x="0" y="24" width="24" height="24" class="cell"/>
+      <rect x="24" y="24" width="24" height="24" class="cell"/>
+      <g class="row-clear">
+        <rect x="0" y="48" width="24" height="24" class="cell"/>
+        <rect x="24" y="48" width="24" height="24" class="cell"/>
+      </g>
+    </g>
+
+    <!-- 2. Flat J-Piece (4 blocks) at Cols 2-4: Flat base of 3 blocks, hook top-left -->
+    <g class="p-j">
+      <rect x="48" y="24" width="24" height="24" class="cell"/>
+      <g class="row-clear">
+        <rect x="48" y="48" width="24" height="24" class="cell"/>
+        <rect x="72" y="48" width="24" height="24" class="cell"/>
+        <rect x="96" y="48" width="24" height="24" class="cell"/>
+      </g>
+    </g>
+
+    <!-- 3. Flat L-Piece (4 blocks) at Cols 5-7: Flat base of 3 blocks, hook top-right -->
+    <g class="p-l">
+      <rect x="168" y="24" width="24" height="24" class="cell"/>
+      <g class="row-clear">
+        <rect x="120" y="48" width="24" height="24" class="cell"/>
+        <rect x="144" y="48" width="24" height="24" class="cell"/>
+        <rect x="168" y="48" width="24" height="24" class="cell"/>
+      </g>
+    </g>
+
+    <!-- Pre-placed blocks filling Col 8, leaving ONLY Col 9 open -->
+    <g fill="#64e39a">
+      <rect x="192" y="96" width="24" height="24" class="cell"/>
+      <rect x="192" y="120" width="24" height="24" class="cell row-clear"/>
+    </g>
+
+    <!-- 4. Vertical I-Piece (1x4, 4 blocks) dropping right down into Col 9 (x=216) -->
+    <g class="p-i">
+      <rect x="216" y="-24" width="24" height="24" class="cell"/>
+      <rect x="216" y="0" width="24" height="24" class="cell"/>
+      <rect x="216" y="24" width="24" height="24" class="cell"/>
+      <g class="row-clear">
+        <rect x="216" y="48" width="24" height="24" class="cell"/>
+      </g>
+    </g>
+
+    <!-- Line clear flash on bottom row (y=120, height 24) -->
+    <rect x="0" y="120" width="240" height="24" rx="2" class="clear-flash"/>
+  </g>
+</svg>

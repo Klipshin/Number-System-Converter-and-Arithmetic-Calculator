@@ -3,6 +3,14 @@
 
 A clean, robust, and student-friendly console application developed in **standard C++ (C++11/C++17)** designed to convert multiple numbers across **Binary (Base 2)**, **Octal (Base 8)**, **Decimal (Base 10)**, and **Hexadecimal (Base 16)** with real-time character validation, formatted tabular outputs, and step-by-step mathematical proofs.
 
+<p align="center">
+  <img src="docs/assets/tetris-preview.svg" alt="Animated Tetris-style intro preview for the console program" width="820">
+</p>
+
+<p align="center">
+  <strong>Console intro:</strong> falling Tetris blocks, a double-line clear, then the converter menu.
+</p>
+
 ---
 
 ## 🌟 Key Features
