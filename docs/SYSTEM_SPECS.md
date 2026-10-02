@@ -43,8 +43,13 @@ Radix-point fractions (e.g. `101.101`, `1A.F`) are supported for conversion in a
 | FR-16 | **1's Complement (Diminished Radix)**   | For any integer input, computes the 1's complement (flip all bits for binary; `(r^n - 1) - X` generalized) displayed in all 4 bases.                                |
 | FR-17 | **2's Complement (Radix Complement)**   | Computes the 2's complement (`1's complement + 1`) for any integer input, shown in all 4 bases.                                                                     |
 | FR-18 | **Complement Table View**               | Displays a combined 1's & 2's complement table for all entered inputs, with bit-width, padded binary, and all-bases conversion.                                     |
-| FR-19 | **Subtraction via 1's Complement**      | Performs `A − B` (Input 1 − Input 2) using the end-around carry method; shows every step and result in all 4 bases.                                                 |
-| FR-20 | **Subtraction via 2's Complement**      | Performs `A − B` (Input 1 − Input 2) using the discard-carry method; shows every step and result in all 4 bases.                                                    |
+| FR-19 | **Subtraction via 1's Complement**          | Performs `A − B` (Input 1 − Input 2) using the end-around carry method; shows every step and result in all 4 bases.                                                                               |
+| FR-20 | **Subtraction via 2's Complement**          | Performs `A − B` (Input 1 − Input 2) using the discard-carry method; shows every step and result in all 4 bases.                                                                                  |
+| FR-21 | **BCD Encoding**                            | Any integer input (in any base) is converted to decimal first; each decimal digit is encoded as a 4-bit BCD group (e.g. `42` → `0100 0010`).                                                      |
+| FR-22 | **9's & 10's Complement Table (BCD)**       | Displays for each input: decimal value, BCD encoding, 9's complement (`9 − d` per digit) and 10's complement (9's comp + 1) with BCD form and all-bases conversion.                               |
+| FR-23 | **BCD Addition**                            | Performs digit-by-digit BCD addition of two operands; applies the +6 correction factor when a digit sum exceeds 9; shows every digit step and result in BCD and all 4 bases.                      |
+| FR-24 | **BCD Subtraction via 9's Complement**      | Performs `A − B` using BCD 9's complement (diminished radix): each digit `d` of B → `9 − d`; adds to A with BCD correction; applies end-around carry; shows all steps and result in all 4 bases. |
+| FR-25 | **BCD Subtraction via 10's Complement**     | Performs `A − B` using BCD 10's complement (radix complement): 9's comp + 1; adds to A with BCD correction; discards final carry; shows all steps and result in all 4 bases.                      |
 
 ### 2.2 Non-Functional Requirements
 
@@ -284,6 +289,106 @@ Output: CompSubResult (step data, final result in BIN/OCT/DEC/HEX)
 
 ---
 
+### 3.8 Algorithm 8: BCD Addition
+
+```
+Algorithm: BCD_Add(A, B)
+Input:  A, B (InputNumber — non-negative integers only)
+Output: BCDAddResult (digit steps, result in BCD and BIN/OCT/DEC/HEX)
+
+1. A_dec <- decimal string of A   (via toDecimal then formatDecimalValue)
+2. B_dec <- decimal string of B
+3. Pad A_dec and B_dec to equal length with leading zeros
+4. nDigits <- length(padded string)
+
+5. carry <- 0,  resultDigits <- ""
+6. FOR i FROM nDigits-1 DOWN TO 0  (LSDigit to MSDigit):
+       digitA   <- A_dec[i] - '0'
+       digitB   <- B_dec[i] - '0'
+       rawSum   <- digitA + digitB + carry
+       rawBin   <- 4-bit binary of rawSum
+
+       IF rawSum > 9:
+           corrected   <- rawSum + 6        // BCD correction factor
+           carry       <- corrected / 10    // decimal carry to next digit
+           bcdDigitOut <- corrected % 10
+       ELSE:
+           corrected   <- rawSum
+           carry       <- 0
+           bcdDigitOut <- rawSum
+
+       Append bcdDigitOut to front of resultDigits
+       Record BCDDigitStep (digitA, digitB, carryIn, rawSum, rawBin,
+                            needCorrect, corrected, carryOut, bcdDigitOut)
+
+7. IF carry > 0:
+       Prepend carry digit to resultDigits  (overflow carry)
+
+8. result_dec <- trim leading zeros from resultDigits
+9. result_bcd <- decToBCD(result_dec)
+10. Convert result_dec -> BIN, OCT, HEX
+11. Return BCDAddResult
+```
+
+---
+
+### 3.9 Algorithm 9: BCD Subtraction via 9's and 10's Complement
+
+```
+Algorithm: BCD_Subtract(A, B, useTens)
+Input:  A, B (InputNumber — non-negative integers only),
+        useTens (bool: false = 9's complement, true = 10's complement)
+Output: BCDSubResult (digit steps, carry adjustment, result in all bases)
+
+1. A_dec, B_dec <- decimal strings of A and B (padded to equal length)
+
+   // Step 1: Compute complement of B
+2. FOR EACH digit d in B_dec:
+       compDigit[i] <- 9 - d       // 9's complement of each digit
+   IF useTens:
+       Add 1 with carry through compDigits (from right)
+                                   // produces 10's complement
+
+   // Step 2: Add A + comp(B) digit-by-digit with BCD correction
+3. carry <- 0,  resultDigits <- ""
+4. FOR i FROM nDigits-1 DOWN TO 0:
+       rawSum   <- A_dec[i] + compDigit[i] + carry
+       IF rawSum > 9:
+           corrected   <- rawSum + 6
+           carry       <- corrected / 10
+           bcdDigitOut <- corrected % 10
+       ELSE:
+           carry       <- 0
+           bcdDigitOut <- rawSum
+       Append bcdDigitOut to front of resultDigits
+
+   hasCarry <- (carry != 0)
+
+   // Step 3: Carry adjustment
+5. IF NOT useTens (9's complement):
+       IF hasCarry:
+           End-Around Carry: add 1 to resultDigits (with BCD correction)
+           isNegative <- FALSE
+       ELSE:
+           Take 9's complement of resultDigits to get magnitude
+           isNegative <- TRUE
+   ELSE (10's complement):
+       IF hasCarry:
+           Discard carry
+           isNegative <- FALSE
+       ELSE:
+           Take 10's complement of resultDigits to get magnitude
+           isNegative <- TRUE
+
+6. result_dec  <- trim resultDigits
+7. result_bcd  <- decToBCD(result_dec)
+8. decimalResult <- isNegative ? -value(result_dec) : +value(result_dec)
+9. Convert decimalResult -> BIN, OCT, HEX
+10. Return BCDSubResult
+```
+
+---
+
 ### 3.5 Algorithm 5: Custom Expression Evaluator (Shunting-Yard)
 
 Parses and evaluates any infix expression such as `(a+b)*c-d` where variables
@@ -453,13 +558,13 @@ flowchart TD
     CE8 -- Yes --> PC
     CE8 -- No --> PE
 
-    OP -- "Option 5\nComplement Operations" --> SUB["Complement Submenu\n0: View Complement Table\n1: Subtract using 1s Comp\n2: Subtract using 2s Comp\n3: Back"]
-    SUB -- "Option 3 Back" --> OL
+    OP -- "Option 5\nComplement Operations" --> SUB["Complement Submenu\n0: View 1s & 2s Comp Table\n1: Subtract using 1s Comp\n2: Subtract using 2s Comp\n3: View 9s & 10s Comp Table BCD\n4: BCD Addition\n5: BCD Sub via 9s Comp\n6: BCD Sub via 10s Comp\n7: Back"]
+    SUB -- "Option 7 Back" --> OL
 
-    SUB -- "Option 0\nComplement Table" --> CT1["For each input:\nCheck integer-only"]
+    SUB -- "Option 0\n1s & 2s Comp Table" --> CT1["For each input:\nCheck integer-only"]
     CT1 --> CT2["Pad binary to bitWidth\nCompute 1s comp flip bits\nCompute 2s comp add 1"]
     CT2 --> CT3["Convert complements\nto OCT DEC HEX"]
-    CT3 --> CT4[Show Complement Table]
+    CT3 --> CT4[Show 1s & 2s Complement Table]
     CT4 --> CPF[Show Complement Result]
 
     SUB -- "Option 1 or 2\n1s or 2s Comp Sub" --> CS0["Pick A Minuend\nfrom N inputs"]
@@ -482,6 +587,37 @@ flowchart TD
     CS12 --> CPF
     CSE --> CPF
 
+    SUB -- "Option 3\n9s & 10s Comp Table BCD" --> BT1["For each input:\nConvert to decimal string"]
+    BT1 --> BT2["9s comp: each digit d -> 9-d\n10s comp: 9s comp + 1 with carry"]
+    BT2 --> BT3["Convert complements to BCD\nOCT DEC HEX BIN"]
+    BT3 --> CPF
+
+    SUB -- "Option 4\nBCD Addition" --> BA0["Pick A and B\nfrom N inputs"]
+    BA0 --> BA1["Convert to decimal strings\nPad to equal digit count"]
+    BA1 --> BA2["For each digit pair LSDigit to MSDigit:\nrawSum = digitA + digitB + carry"]
+    BA2 --> BA3{rawSum > 9?}
+    BA3 -- Yes --> BA4["Apply correction: +6\ncarry = corrected / 10\nbcdDigit = corrected % 10"]
+    BA3 -- No --> BA5["No correction\nbcdDigit = rawSum  carry = 0"]
+    BA4 --> BA6[Next digit]
+    BA5 --> BA6
+    BA6 --> BA7{More digits?}
+    BA7 -- Yes --> BA2
+    BA7 -- No --> BA8["Prepend final carry if any\nBuild result BCD string"]
+    BA8 --> CPF
+
+    SUB -- "Option 5 or 6\nBCD Sub 9s or 10s" --> BS0["Pick A and B"]
+    BS0 --> BS1["Compute 9s complement of B digits\nIF 10s: add 1 with carry"]
+    BS1 --> BS2["Add A + comp B digit by digit\nwith BCD correction"]
+    BS2 --> BS3{hasCarry?}
+    BS3 -- "9s comp & carry" --> BS4["End-Around Carry\nadd 1 to LSDigit\nPositive result"]
+    BS3 -- "9s comp & no carry" --> BS5["Take 9s comp of raw sum\nNegative result"]
+    BS3 -- "10s comp & carry" --> BS6["Discard carry\nPositive result"]
+    BS3 -- "10s comp & no carry" --> BS7["Take 10s comp of raw sum\nNegative result"]
+    BS4 --> CPF
+    BS5 --> CPF
+    BS6 --> CPF
+    BS7 --> CPF
+
     CPF --> CPOST[Post-Complement Options]
     CPOST --> CPS{User choice}
     CPS -- "View Math Steps" --> MS2["Show positional expansion\nand successive division proof"]
@@ -501,7 +637,7 @@ flowchart TD
 
     D -- "Option 2\nPreset Combinations" --> PR["Select Combination\n1: BIN+OCT+DEC\n2: BIN+DEC+HEX\n3: OCT+DEC+HEX\n4: BIN+OCT+HEX\nor Run All"]
     PR --> PRR["Run ALL 4 arithmetic ops\nComplement Table\n1s and 2s Complement Sub\nfor selected combo"]
-    PRR --> C
+    PRR["Run ALL 4 arithmetic ops\nComplement Table\n1s and 2s Complement Sub\nBCD Comp Table\nBCD Add and BCD Sub"] --> C
 
     D -- "Option 3\nSystem Specs" --> SS[Display system specifications]
     SS --> C
@@ -544,20 +680,72 @@ struct CustomExprResult {
     bool   isValid;
     string errorMsg;
 };
+
+struct BCDDigitStep {
+    int    digitA, digitB, carryIn, rawSum; // per-digit operand data
+    string rawBin;                          // 4-bit binary of rawSum
+    bool   needCorrect;                     // true if rawSum > 9
+    int    corrected, carryOut, bcdDigitOut;
+    string corrBin;                         // 4-bit binary of output digit
+};
+
+struct BCDSubDigitStep {
+    int digitA, compDigit, carryIn, rawSum;
+    bool needCorrect;
+    int  corrected, carryOut, bcdDigitOut;
+};
+
+struct BCDAddResult {
+    bool   isValid;  string errorMsg;
+    string A_dec, B_dec, A_bcd, B_bcd;
+    vector<BCDDigitStep> steps;
+    int    finalCarry;
+    string result_dec, result_bcd;
+    string result_bin, result_oct, result_hex;
+};
+
+struct BCDSubResult {
+    bool   isValid;  string errorMsg;
+    bool   useTens;                     // false = 9's, true = 10's
+    string A_dec, B_dec, A_bcd, B_bcd, comp_bcd;
+    vector<BCDSubDigitStep> steps;
+    bool   hasCarry, isNegative;
+    string adjusted_bcd;
+    double decimalResult;
+    string result_dec, result_bcd;
+    string result_bin, result_oct, result_hex;
+};
+
+struct BCDComplementResult {
+    bool   applicable;  string note;
+    string original_dec, original_bcd;
+    // 9's complement
+    string ninesComp_dec, ninesComp_bcd;
+    string ninesComp_bin, ninesComp_oct, ninesComp_hex;
+    // 10's complement
+    string tensComp_dec, tensComp_bcd;
+    string tensComp_bin, tensComp_oct, tensComp_hex;
+};
 ```
 
 ### 5.2 Arithmetic Formulas
 
-| Operation      | Formula                                              |
-| -------------- | ---------------------------------------------------- |
-| Addition       | R = X1 + X2 + ... + XN                               |
-| Subtraction    | R = X1 - X2 - ... - XN                               |
-| Multiplication | R = X1 x X2 x ... x XN                               |
-| Division       | R = X1 / X2 / ... / XN                               |
-| 1's Complement | `~X` (flip all bits), generalized as `(r^n - 1) - X` |
-| 2's Complement | `~X + 1` (1's complement plus 1)                     |
-| Sub (1's comp) | `A + ones_comp(B)`; add carry-out back (end-around)  |
-| Sub (2's comp) | `A + twos_comp(B)`; discard carry-out                |
+| Operation                  | Formula                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------ |
+| Addition                   | R = X1 + X2 + ... + XN                                                               |
+| Subtraction                | R = X1 - X2 - ... - XN                                                               |
+| Multiplication             | R = X1 x X2 x ... x XN                                                               |
+| Division                   | R = X1 / X2 / ... / XN                                                               |
+| 1's Complement             | `~X` (flip all bits), generalized as `(r^n - 1) - X`                                |
+| 2's Complement             | `~X + 1` (1's complement plus 1)                                                     |
+| Sub (1's comp)             | `A + ones_comp(B)`; add carry-out back (end-around)                                  |
+| Sub (2's comp)             | `A + twos_comp(B)`; discard carry-out                                                |
+| BCD Encoding               | Each decimal digit `d` → 4-bit group: `0`–`9` → `0000`–`1001`                       |
+| 9's Complement (BCD)       | Each digit `d` → `9 − d`; i.e. diminished radix complement in decimal               |
+| 10's Complement (BCD)      | 9's complement + 1 (with carry propagation); i.e. radix complement in decimal        |
+| BCD Addition               | Digit-by-digit: `rawSum = dA + dB + carry`; if `rawSum > 9` add correction `+6`     |
+| BCD Sub (9's comp)         | `A + nines_comp(B)`; apply end-around carry to LSDigit                               |
+| BCD Sub (10's comp)        | `A + tens_comp(B)`; discard final carry                                              |
 
 ### 5.3 Operator Precedence Table
 
@@ -590,15 +778,18 @@ struct CustomExprResult {
 
 ### 5.5 Error Handling Summary
 
-| Error Condition                 | Detection Point         | Message Shown                                             |
-| ------------------------------- | ----------------------- | --------------------------------------------------------- |
-| Invalid char in number input    | Lexer (validateInput)   | "Invalid character 'X' for Base N"                        |
-| Multiple radix points           | Lexer (validateInput)   | "Multiple radix points not allowed"                       |
-| Division by zero (simple mode)  | processArithmetic       | "Division by zero is not allowed."                        |
-| Division by zero (custom mode)  | evalPostfix             | "Division by zero: divisor evaluates to 0."               |
-| Variable out of range           | tokenizeExpr            | "Variable 'X' out of range. Only N inputs defined."       |
-| Invalid character in expression | tokenizeExpr            | "Invalid character 'X' in expression."                    |
-| Unclosed parenthesis            | infixToPostfix          | "Mismatched parentheses: unclosed '(' detected."          |
-| Extra closing parenthesis       | infixToPostfix          | "Mismatched parentheses: extra ')' detected."             |
-| Malformed expression            | evalPostfix             | "Malformed expression: too many values left unevaluated." |
-| Empty expression                | processCustomExpression | "Expression cannot be empty."                             |
+| Error Condition                 | Detection Point         | Message Shown                                                              |
+| ------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
+| Invalid char in number input    | Lexer (validateInput)   | "Invalid character 'X' for Base N"                                         |
+| Multiple radix points           | Lexer (validateInput)   | "Multiple radix points not allowed"                                        |
+| Division by zero (simple mode)  | processArithmetic       | "Division by zero is not allowed."                                         |
+| Division by zero (custom mode)  | evalPostfix             | "Division by zero: divisor evaluates to 0."                                |
+| Variable out of range           | tokenizeExpr            | "Variable 'X' out of range. Only N inputs defined."                        |
+| Invalid character in expression | tokenizeExpr            | "Invalid character 'X' in expression."                                     |
+| Unclosed parenthesis            | infixToPostfix          | "Mismatched parentheses: unclosed '(' detected."                           |
+| Extra closing parenthesis       | infixToPostfix          | "Mismatched parentheses: extra ')' detected."                              |
+| Malformed expression            | evalPostfix             | "Malformed expression: too many values left unevaluated."                  |
+| Empty expression                | processCustomExpression | "Expression cannot be empty."                                              |
+| Fractional input for BCD ops    | bcdAdd / bcdSubtract    | "BCD operation requires integer inputs (no radix fractions)."              |
+| Negative input for BCD ops      | bcdAdd / bcdSubtract    | "BCD operation is defined for non-negative integers."                      |
+| Fractional for BCD complement   | computeBCDComplements   | "Fractional numbers — BCD complement not applicable."                      |
