@@ -23,33 +23,33 @@ Radix-point fractions (e.g. `101.101`, `1A.F`) are supported for conversion in a
 
 ### 2.1 Functional Requirements
 
-| #     | Requirement                             | Description                                                                                                                                                         |
-| ----- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-01 | **Multi-Input Acceptance**              | Prompts user for count N >= 3 (validated, max 20).                                                                                                                  |
-| FR-02 | **Independent Base Selection**          | Each input independently assigns one of: Binary, Octal, Decimal, Hexadecimal.                                                                                       |
-| FR-03 | **Strict Character Validation**         | Every character is validated against the chosen base; invalid chars produce a descriptive error and re-prompt without crashing.                                     |
-| FR-04 | **Radix Fraction Support**              | Accepts and correctly converts numbers with a single radix point (e.g. `10.11` BIN = `2.75` DEC).                                                                   |
-| FR-05 | **4-Base Simultaneous Conversion**      | Each input is converted to Binary, Octal, Decimal, and Hexadecimal in one step.                                                                                     |
-| FR-06 | **Formatted Table Output**              | Conversion results displayed in a centered, color-coded ASCII table.                                                                                                |
-| FR-07 | **Step-by-Step Math Proof**             | User can inspect positional-notation expansion (N->10) and successive-division/multiplication (10->M) for any input.                                                |
-| FR-08 | **Standard Arithmetic Operations**      | Addition, Subtraction, Multiplication, Division applied across all N inputs; result displayed in all 4 bases.                                                       |
-| FR-09 | **Custom Expression Evaluator**         | User types any infix expression using variables `a`-`z` (mapped to inputs 1-N) and operators `+ - * /` with parentheses.                                            |
-| FR-10 | **Operator Precedence & Associativity** | `*` and `/` bind tighter than `+` and `-`; all operators are left-associative; parentheses override precedence.                                                     |
-| FR-11 | **Implicit Multiplication**             | Adjacent terms without an explicit operator (e.g. `a(b+c)`, `(a+b)c`) automatically insert `*`.                                                                     |
-| FR-12 | **Division-by-Zero Protection**         | Detects and reports division-by-zero for both simple and custom expression modes; result fields show `UNDEFINED`.                                                   |
-| FR-13 | **Try Another Operation (Back)**        | After viewing a result, user returns to the operation selector and tries a different operation without re-entering numbers.                                         |
-| FR-14 | **Preset Test Suite**                   | 4 built-in number combinations (BIN+OCT+DEC, BIN+DEC+HEX, OCT+DEC+HEX, BIN+OCT+HEX); each runs all 4 arithmetic operations and complement operations automatically. |
-| FR-15 | **Keyboard Navigation**                 | Scrollable menus with Arrow keys or W/S, confirmed with Enter or Space.                                                                                             |
-| FR-16 | **1's Complement (Diminished Radix)**   | For any integer input, computes the 1's complement (flip all bits for binary; `(r^n - 1) - X` generalized) displayed in all 4 bases.                                |
-| FR-17 | **2's Complement (Radix Complement)**   | Computes the 2's complement (`1's complement + 1`) for any integer input, shown in all 4 bases.                                                                     |
-| FR-18 | **Complement Table View**               | Displays a combined 1's & 2's complement table for all entered inputs, with bit-width, padded binary, and all-bases conversion.                                     |
-| FR-19 | **Subtraction via 1's Complement**          | Performs `A − B` (Input 1 − Input 2) using the end-around carry method; shows every step and result in all 4 bases.                                                                               |
-| FR-20 | **Subtraction via 2's Complement**          | Performs `A − B` (Input 1 − Input 2) using the discard-carry method; shows every step and result in all 4 bases.                                                                                  |
-| FR-21 | **BCD Encoding**                            | Any integer input (in any base) is converted to decimal first; each decimal digit is encoded as a 4-bit BCD group (e.g. `42` → `0100 0010`).                                                      |
-| FR-22 | **9's & 10's Complement Table (BCD)**       | Displays for each input: decimal value, BCD encoding, 9's complement (`9 − d` per digit) and 10's complement (9's comp + 1) with BCD form and all-bases conversion.                               |
-| FR-23 | **BCD Addition**                            | Performs digit-by-digit BCD addition of two operands; applies the +6 correction factor when a digit sum exceeds 9; shows every digit step and result in BCD and all 4 bases.                      |
-| FR-24 | **BCD Subtraction via 9's Complement**      | Performs `A − B` using BCD 9's complement (diminished radix): each digit `d` of B → `9 − d`; adds to A with BCD correction; applies end-around carry; shows all steps and result in all 4 bases. |
-| FR-25 | **BCD Subtraction via 10's Complement**     | Performs `A − B` using BCD 10's complement (radix complement): 9's comp + 1; adds to A with BCD correction; discards final carry; shows all steps and result in all 4 bases.                      |
+| #     | Requirement                             | Description                                                                                                                                                                                      |
+| ----- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FR-01 | **Multi-Input Acceptance**              | Prompts user for count N >= 3 (validated, max 20).                                                                                                                                               |
+| FR-02 | **Independent Base Selection**          | Each input independently assigns one of: Binary, Octal, Decimal, Hexadecimal.                                                                                                                    |
+| FR-03 | **Strict Character Validation**         | Every character is validated against the chosen base; invalid chars produce a descriptive error and re-prompt without crashing.                                                                  |
+| FR-04 | **Radix Fraction Support**              | Accepts and correctly converts numbers with a single radix point (e.g. `10.11` BIN = `2.75` DEC).                                                                                                |
+| FR-05 | **4-Base Simultaneous Conversion**      | Each input is converted to Binary, Octal, Decimal, and Hexadecimal in one step.                                                                                                                  |
+| FR-06 | **Formatted Table Output**              | Conversion results displayed in a centered, color-coded ASCII table.                                                                                                                             |
+| FR-07 | **Step-by-Step Math Proof**             | User can inspect positional-notation expansion (N->10) and successive-division/multiplication (10->M) for any input.                                                                             |
+| FR-08 | **Standard Arithmetic Operations**      | Addition, Subtraction, Multiplication, Division applied across all N inputs; result displayed in all 4 bases.                                                                                    |
+| FR-09 | **Custom Expression Evaluator**         | User types any infix expression using variables `a`-`z` (mapped to inputs 1-N) and operators `+ - * /` with parentheses.                                                                         |
+| FR-10 | **Operator Precedence & Associativity** | `*` and `/` bind tighter than `+` and `-`; all operators are left-associative; parentheses override precedence.                                                                                  |
+| FR-11 | **Implicit Multiplication**             | Adjacent terms without an explicit operator (e.g. `a(b+c)`, `(a+b)c`) automatically insert `*`.                                                                                                  |
+| FR-12 | **Division-by-Zero Protection**         | Detects and reports division-by-zero for both simple and custom expression modes; result fields show `UNDEFINED`.                                                                                |
+| FR-13 | **Try Another Operation (Back)**        | After viewing a result, user returns to the operation selector and tries a different operation without re-entering numbers.                                                                      |
+| FR-14 | **Preset Test Suite**                   | 4 built-in number combinations (BIN+OCT+DEC, BIN+DEC+HEX, OCT+DEC+HEX, BIN+OCT+HEX); each runs all 4 arithmetic operations and complement operations automatically.                              |
+| FR-15 | **Keyboard Navigation**                 | Scrollable menus with Arrow keys or W/S, confirmed with Enter or Space.                                                                                                                          |
+| FR-16 | **1's Complement (Diminished Radix)**   | For any integer input, computes the 1's complement (flip all bits for binary; `(r^n - 1) - X` generalized) displayed in all 4 bases.                                                             |
+| FR-17 | **2's Complement (Radix Complement)**   | Computes the 2's complement (`1's complement + 1`) for any integer input, shown in all 4 bases.                                                                                                  |
+| FR-18 | **Complement Table View**               | Displays a combined 1's & 2's complement table for all entered inputs, with bit-width, padded binary, and all-bases conversion.                                                                  |
+| FR-19 | **Subtraction via 1's Complement**      | Performs `A − B` (Input 1 − Input 2) using the end-around carry method; shows every step and result in all 4 bases.                                                                              |
+| FR-20 | **Subtraction via 2's Complement**      | Performs `A − B` (Input 1 − Input 2) using the discard-carry method; shows every step and result in all 4 bases.                                                                                 |
+| FR-21 | **BCD Encoding**                        | Any integer input (in any base) is converted to decimal first; each decimal digit is encoded as a 4-bit BCD group (e.g. `42` → `0100 0010`).                                                     |
+| FR-22 | **9's & 10's Complement Table (BCD)**   | Displays for each input: decimal value, BCD encoding, 9's complement (`9 − d` per digit) and 10's complement (9's comp + 1) with BCD form and all-bases conversion.                              |
+| FR-23 | **BCD Addition**                        | Performs digit-by-digit BCD addition of two operands; applies the +6 correction factor when a digit sum exceeds 9; shows every digit step and result in BCD and all 4 bases.                     |
+| FR-24 | **BCD Subtraction via 9's Complement**  | Performs `A − B` using BCD 9's complement (diminished radix): each digit `d` of B → `9 − d`; adds to A with BCD correction; applies end-around carry; shows all steps and result in all 4 bases. |
+| FR-25 | **BCD Subtraction via 10's Complement** | Performs `A − B` using BCD 10's complement (radix complement): 9's comp + 1; adds to A with BCD correction; discards final carry; shows all steps and result in all 4 bases.                     |
 
 ### 2.2 Non-Functional Requirements
 
@@ -515,134 +515,59 @@ Output: result (double), errorMsg (string)
 
 ```mermaid
 flowchart TD
-    A([Start Program]) --> B[Display Tetris Animation\nASCII Intro Banner]
-    B --> C[Main Menu]
-    C --> D{User Choice}
+    A([Start]) --> B[Show intro]
+    B --> C{Main Menu}
 
-    D -- "Option 1\nInteractive Converter" --> E["Prompt for count N\nminimum 3, max 20"]
-    E --> F{N >= 3?}
+    C -- Interactive Converter --> D[Enter N inputs]
+    D --> E[For each input: select base, enter value]
+    E --> F{Valid?}
     F -- No --> E
-    F -- Yes --> G[Loop i = 1 to N]
+    F -- Yes --> G[Convert each input to BIN, OCT, DEC, HEX]
+    G --> H[Show conversion table and variable map]
+    H --> I{Operation Menu}
 
-    G --> H["Select Base for Input i\nBIN / OCT / DEC / HEX"]
-    H --> I["Enter value string for Input i"]
-    I --> J{Valid characters\nfor chosen base?}
-    J -- Invalid --> K[Show specific error message\nre-prompt]
-    K --> I
-    J -- Valid --> L["Convert Input i\nN to 10 then 10 to 2 8 16"]
-    L --> M{More inputs\ni < N?}
-    M -- Yes --> G
-    M -- No --> N["Show Conversion Results Table\nShow Variable Map\na = Input 1, b = Input 2 ..."]
+    I -- "Standard + - * /" --> J[Calculate using decimal values]
+    J --> K{Division by zero?}
+    K -- Yes --> L[Show UNDEFINED error]
+    K -- No --> M[Convert result to all bases]
+    L --> N[Show result screen]
+    M --> N
 
-    N --> OL["OPERATION LOOP\nUser keeps same numbers\nuntil Return chosen"]
-    OL --> OP["Main Operation Menu\n0: Addition  1: Subtraction\n2: Multiplication  3: Division\n4: Custom Expression\n5: Complement Operations\n6: Return to Main Menu"]
-    OP -- "Option 6" --> C
+    I -- Custom Expression --> O[Tokenize expression and insert implicit *]
+    O --> P[Convert infix to postfix using Shunting-Yard]
+    P --> Q[Evaluate postfix stack]
+    Q --> R{Expression error?}
+    R -- Yes --> L
+    R -- No --> M
 
-    OP -- "0-3\nStandard ops" --> PA[Normalize all inputs\nto Decimal]
-    PA --> PB{Any divisor\n== 0?}
-    PB -- Yes --> PC["Show ERROR: Division by zero\nResult = UNDEFINED"]
-    PB -- No --> PD[Perform arithmetic\non decimal values]
-    PD --> PE[Convert result to\nBIN OCT DEC HEX]
-    PE --> PF[Show Arithmetic Result]
+    I -- "Complements / BCD" --> S{Complement Menu}
+    S -- "1s/2s table" --> T[Pad binary, compute complements, convert to all bases]
+    S -- "1s/2s subtraction" --> U[Pad A and B, add A + complement(B), adjust carry/sign]
+    S -- "BCD table" --> V[Convert to decimal digits, compute 9s/10s complements]
+    S -- "BCD add/subtract" --> W[Process decimal digits with BCD correction and carry rules]
+    T --> X[Show complement or BCD result]
+    U --> X
+    V --> X
+    W --> X
 
-    OP -- "Option 4\nCustom Expression" --> CE1["Show Variable Map\nUser types expression\ne.g. a times open-b+c-close minus d"]
-    CE1 --> CE2["Lexer: tokenize +\ninsert implicit * tokens"]
-    CE2 --> CE3{Lex error?}
-    CE3 -- Yes --> CE4[Show error\nre-prompt]
-    CE4 --> CE1
-    CE3 -- No --> CE5["Shunting-Yard\nInfix to Postfix RPN"]
-    CE5 --> CE6{Parenthesis\nerror?}
-    CE6 -- Yes --> CE4
-    CE6 -- No --> CE7[Evaluate RPN\nstack machine]
-    CE7 --> CE8{Runtime error?\ndiv by zero etc}
-    CE8 -- Yes --> PC
-    CE8 -- No --> PE
+    N --> Y{Post-Result Options}
+    X --> Z{Post-Complement Options}
+    Y -- View steps/result again --> N
+    Y -- Try another operation --> I
+    Y -- Return --> C
+    Z -- View steps/result again --> X
+    Z -- Try another complement --> S
+    Z -- Back to operations --> I
 
-    OP -- "Option 5\nComplement Operations" --> SUB["Complement Submenu\n0: View 1s & 2s Comp Table\n1: Subtract using 1s Comp\n2: Subtract using 2s Comp\n3: View 9s & 10s Comp Table BCD\n4: BCD Addition\n5: BCD Sub via 9s Comp\n6: BCD Sub via 10s Comp\n7: Back"]
-    SUB -- "Option 7 Back" --> OL
+    I -- Return --> C
 
-    SUB -- "Option 0\n1s & 2s Comp Table" --> CT1["For each input:\nCheck integer-only"]
-    CT1 --> CT2["Pad binary to bitWidth\nCompute 1s comp flip bits\nCompute 2s comp add 1"]
-    CT2 --> CT3["Convert complements\nto OCT DEC HEX"]
-    CT3 --> CT4[Show 1s & 2s Complement Table]
-    CT4 --> CPF[Show Complement Result]
+    C -- Preset Combinations --> AA[Select combo or run all]
+    AA --> AB[Run arithmetic, complement, and BCD test suite]
+    AB --> C
 
-    SUB -- "Option 1 or 2\n1s or 2s Comp Sub" --> CS0["Pick A Minuend\nfrom N inputs"]
-    CS0 --> CS0B["Pick B Subtrahend\nfrom N inputs"]
-    CS0B --> CS2{"Both are\nintegers?"}
-    CS2 -- No --> CSE[Show error\nNot applicable]
-    CS2 -- Yes --> CS3["Pad A and B to same bitWidth"]
-    CS3 --> CS4["Compute complement of B"]
-    CS4 --> CS5["Add A plus complement of B\nRecord carryOut"]
-    CS5 --> CS6{"1s method?"}
-    CS6 -- Yes --> CS7{carryOut?}
-    CS7 -- Yes --> CS8["End-around carry: add carry back"]
-    CS7 -- No --> CS9["Take 1s comp = magnitude\nMark negative"]
-    CS6 -- No --> CS10{carryOut?}
-    CS10 -- Yes --> CS11["Discard carry: positive result"]
-    CS10 -- No --> CS12["Take 2s comp = magnitude\nMark negative"]
-    CS8 --> CPF
-    CS9 --> CPF
-    CS11 --> CPF
-    CS12 --> CPF
-    CSE --> CPF
-
-    SUB -- "Option 3\n9s & 10s Comp Table BCD" --> BT1["For each input:\nConvert to decimal string"]
-    BT1 --> BT2["9s comp: each digit d -> 9-d\n10s comp: 9s comp + 1 with carry"]
-    BT2 --> BT3["Convert complements to BCD\nOCT DEC HEX BIN"]
-    BT3 --> CPF
-
-    SUB -- "Option 4\nBCD Addition" --> BA0["Pick A and B\nfrom N inputs"]
-    BA0 --> BA1["Convert to decimal strings\nPad to equal digit count"]
-    BA1 --> BA2["For each digit pair LSDigit to MSDigit:\nrawSum = digitA + digitB + carry"]
-    BA2 --> BA3{rawSum > 9?}
-    BA3 -- Yes --> BA4["Apply correction: +6\ncarry = corrected / 10\nbcdDigit = corrected % 10"]
-    BA3 -- No --> BA5["No correction\nbcdDigit = rawSum  carry = 0"]
-    BA4 --> BA6[Next digit]
-    BA5 --> BA6
-    BA6 --> BA7{More digits?}
-    BA7 -- Yes --> BA2
-    BA7 -- No --> BA8["Prepend final carry if any\nBuild result BCD string"]
-    BA8 --> CPF
-
-    SUB -- "Option 5 or 6\nBCD Sub 9s or 10s" --> BS0["Pick A and B"]
-    BS0 --> BS1["Compute 9s complement of B digits\nIF 10s: add 1 with carry"]
-    BS1 --> BS2["Add A + comp B digit by digit\nwith BCD correction"]
-    BS2 --> BS3{hasCarry?}
-    BS3 -- "9s comp & carry" --> BS4["End-Around Carry\nadd 1 to LSDigit\nPositive result"]
-    BS3 -- "9s comp & no carry" --> BS5["Take 9s comp of raw sum\nNegative result"]
-    BS3 -- "10s comp & carry" --> BS6["Discard carry\nPositive result"]
-    BS3 -- "10s comp & no carry" --> BS7["Take 10s comp of raw sum\nNegative result"]
-    BS4 --> CPF
-    BS5 --> CPF
-    BS6 --> CPF
-    BS7 --> CPF
-
-    CPF --> CPOST[Post-Complement Options]
-    CPOST --> CPS{User choice}
-    CPS -- "View Math Steps" --> MS2["Show positional expansion\nand successive division proof"]
-    MS2 --> CPOST
-    CPS -- "View Result Again" --> CPF
-    CPS -- "Try Another Complement Op" --> SUB
-    CPS -- "Back to Operation Menu" --> OL
-
-    PC --> PF
-    PF --> POST[Post-Result Options Menu]
-    POST --> PS{User choice}
-    PS -- "View Math Steps\nfor Input i" --> MS["Show positional expansion\nand successive division proof"]
-    MS --> POST
-    PS -- "View Result Again" --> PF
-    PS -- "Try Another Operation\nkeep same numbers" --> OL
-    PS -- "Return to Main Menu" --> C
-
-    D -- "Option 2\nPreset Combinations" --> PR["Select Combination\n1: BIN+OCT+DEC\n2: BIN+DEC+HEX\n3: OCT+DEC+HEX\n4: BIN+OCT+HEX\nor Run All"]
-    PR --> PRR["Run ALL 4 arithmetic ops\nComplement Table\n1s and 2s Complement Sub\nfor selected combo"]
-    PRR["Run ALL 4 arithmetic ops\nComplement Table\n1s and 2s Complement Sub\nBCD Comp Table\nBCD Add and BCD Sub"] --> C
-
-    D -- "Option 3\nSystem Specs" --> SS[Display system specifications]
-    SS --> C
-
-    D -- "Option 4 Exit" --> Z([End Program])
+    C -- System Specs --> AC[Display specifications]
+    AC --> C
+    C -- Exit --> AD([End])
 ```
 
 ---
@@ -730,22 +655,22 @@ struct BCDComplementResult {
 
 ### 5.2 Arithmetic Formulas
 
-| Operation                  | Formula                                                                              |
-| -------------------------- | ------------------------------------------------------------------------------------ |
-| Addition                   | R = X1 + X2 + ... + XN                                                               |
-| Subtraction                | R = X1 - X2 - ... - XN                                                               |
-| Multiplication             | R = X1 x X2 x ... x XN                                                               |
-| Division                   | R = X1 / X2 / ... / XN                                                               |
-| 1's Complement             | `~X` (flip all bits), generalized as `(r^n - 1) - X`                                |
-| 2's Complement             | `~X + 1` (1's complement plus 1)                                                     |
-| Sub (1's comp)             | `A + ones_comp(B)`; add carry-out back (end-around)                                  |
-| Sub (2's comp)             | `A + twos_comp(B)`; discard carry-out                                                |
-| BCD Encoding               | Each decimal digit `d` → 4-bit group: `0`–`9` → `0000`–`1001`                       |
-| 9's Complement (BCD)       | Each digit `d` → `9 − d`; i.e. diminished radix complement in decimal               |
-| 10's Complement (BCD)      | 9's complement + 1 (with carry propagation); i.e. radix complement in decimal        |
-| BCD Addition               | Digit-by-digit: `rawSum = dA + dB + carry`; if `rawSum > 9` add correction `+6`     |
-| BCD Sub (9's comp)         | `A + nines_comp(B)`; apply end-around carry to LSDigit                               |
-| BCD Sub (10's comp)        | `A + tens_comp(B)`; discard final carry                                              |
+| Operation             | Formula                                                                         |
+| --------------------- | ------------------------------------------------------------------------------- |
+| Addition              | R = X1 + X2 + ... + XN                                                          |
+| Subtraction           | R = X1 - X2 - ... - XN                                                          |
+| Multiplication        | R = X1 x X2 x ... x XN                                                          |
+| Division              | R = X1 / X2 / ... / XN                                                          |
+| 1's Complement        | `~X` (flip all bits), generalized as `(r^n - 1) - X`                            |
+| 2's Complement        | `~X + 1` (1's complement plus 1)                                                |
+| Sub (1's comp)        | `A + ones_comp(B)`; add carry-out back (end-around)                             |
+| Sub (2's comp)        | `A + twos_comp(B)`; discard carry-out                                           |
+| BCD Encoding          | Each decimal digit `d` → 4-bit group: `0`–`9` → `0000`–`1001`                   |
+| 9's Complement (BCD)  | Each digit `d` → `9 − d`; i.e. diminished radix complement in decimal           |
+| 10's Complement (BCD) | 9's complement + 1 (with carry propagation); i.e. radix complement in decimal   |
+| BCD Addition          | Digit-by-digit: `rawSum = dA + dB + carry`; if `rawSum > 9` add correction `+6` |
+| BCD Sub (9's comp)    | `A + nines_comp(B)`; apply end-around carry to LSDigit                          |
+| BCD Sub (10's comp)   | `A + tens_comp(B)`; discard final carry                                         |
 
 ### 5.3 Operator Precedence Table
 
@@ -778,18 +703,18 @@ struct BCDComplementResult {
 
 ### 5.5 Error Handling Summary
 
-| Error Condition                 | Detection Point         | Message Shown                                                              |
-| ------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
-| Invalid char in number input    | Lexer (validateInput)   | "Invalid character 'X' for Base N"                                         |
-| Multiple radix points           | Lexer (validateInput)   | "Multiple radix points not allowed"                                        |
-| Division by zero (simple mode)  | processArithmetic       | "Division by zero is not allowed."                                         |
-| Division by zero (custom mode)  | evalPostfix             | "Division by zero: divisor evaluates to 0."                                |
-| Variable out of range           | tokenizeExpr            | "Variable 'X' out of range. Only N inputs defined."                        |
-| Invalid character in expression | tokenizeExpr            | "Invalid character 'X' in expression."                                     |
-| Unclosed parenthesis            | infixToPostfix          | "Mismatched parentheses: unclosed '(' detected."                           |
-| Extra closing parenthesis       | infixToPostfix          | "Mismatched parentheses: extra ')' detected."                              |
-| Malformed expression            | evalPostfix             | "Malformed expression: too many values left unevaluated."                  |
-| Empty expression                | processCustomExpression | "Expression cannot be empty."                                              |
-| Fractional input for BCD ops    | bcdAdd / bcdSubtract    | "BCD operation requires integer inputs (no radix fractions)."              |
-| Negative input for BCD ops      | bcdAdd / bcdSubtract    | "BCD operation is defined for non-negative integers."                      |
-| Fractional for BCD complement   | computeBCDComplements   | "Fractional numbers — BCD complement not applicable."                      |
+| Error Condition                 | Detection Point         | Message Shown                                                 |
+| ------------------------------- | ----------------------- | ------------------------------------------------------------- |
+| Invalid char in number input    | Lexer (validateInput)   | "Invalid character 'X' for Base N"                            |
+| Multiple radix points           | Lexer (validateInput)   | "Multiple radix points not allowed"                           |
+| Division by zero (simple mode)  | processArithmetic       | "Division by zero is not allowed."                            |
+| Division by zero (custom mode)  | evalPostfix             | "Division by zero: divisor evaluates to 0."                   |
+| Variable out of range           | tokenizeExpr            | "Variable 'X' out of range. Only N inputs defined."           |
+| Invalid character in expression | tokenizeExpr            | "Invalid character 'X' in expression."                        |
+| Unclosed parenthesis            | infixToPostfix          | "Mismatched parentheses: unclosed '(' detected."              |
+| Extra closing parenthesis       | infixToPostfix          | "Mismatched parentheses: extra ')' detected."                 |
+| Malformed expression            | evalPostfix             | "Malformed expression: too many values left unevaluated."     |
+| Empty expression                | processCustomExpression | "Expression cannot be empty."                                 |
+| Fractional input for BCD ops    | bcdAdd / bcdSubtract    | "BCD operation requires integer inputs (no radix fractions)." |
+| Negative input for BCD ops      | bcdAdd / bcdSubtract    | "BCD operation is defined for non-negative integers."         |
+| Fractional for BCD complement   | computeBCDComplements   | "Fractional numbers — BCD complement not applicable."         |
